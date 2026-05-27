@@ -14,6 +14,20 @@ function makeInput(value: string) {
   return el;
 }
 
+type EditorGameFixture = {
+  title: string;
+  author: string;
+  hideHud: boolean;
+  disableSkills: boolean;
+  disablePixelFont?: boolean;
+  backgroundMusicVideoId?: string;
+};
+
+type BackgroundMusicEngineFixture = {
+  syncFromGame: ReturnType<typeof vi.fn>;
+  stop: ReturnType<typeof vi.fn>;
+};
+
 type UIControllerManager = ConstructorParameters<typeof EditorUIController>[0];
 type UIManagerFixture = ReturnType<typeof makeManager>;
 
@@ -68,7 +82,7 @@ function makeManager(stateOverrides: Record<string, unknown> = {}) {
       updateNpcForm: vi.fn(),
     },
     gameEngine: {
-      getGame: vi.fn(() => ({
+      getGame: vi.fn<() => EditorGameFixture>(() => ({
         title: 'Test Title',
         author: 'Test Author',
         hideHud: false,
@@ -77,7 +91,8 @@ function makeManager(stateOverrides: Record<string, unknown> = {}) {
       })),
       backgroundMusicEngine: {
         syncFromGame: vi.fn(),
-      },
+        stop: vi.fn(),
+      } as BackgroundMusicEngineFixture,
       syncDocumentTitle: vi.fn(),
       refreshIntroScreen: vi.fn(),
       exportGameData: vi.fn(() => ({ title: 'Test', author: '' })),
@@ -139,7 +154,7 @@ describe('EditorUIController', () => {
     const mgr = makeManager();
     mgr.domCache.titleInput.value = 'My Game';
     mgr.domCache.authorInput.value = 'André';
-    const game = { title: '', author: '', hideHud: false, disableSkills: false };
+    const game: EditorGameFixture = { title: '', author: '', hideHud: false, disableSkills: false };
     mgr.gameEngine.getGame.mockReturnValue(game);
     const ctrl = makeController(mgr);
     ctrl.updateGameMetadata();
@@ -255,7 +270,7 @@ describe('EditorUIController', () => {
 
   it('setBackgroundMusicUrl normalizes a YouTube URL into the stored video id', () => {
     const mgr = makeManager();
-    const game = {
+    const game: EditorGameFixture = {
       title: 'Music',
       author: 'Dev',
       hideHud: false,
@@ -277,7 +292,7 @@ describe('EditorUIController', () => {
   it('setBackgroundMusicUrl keeps playback stopped while in editor mode', () => {
     document.body.classList.add('editor-mode');
     const mgr = makeManager();
-    const game = {
+    const game: EditorGameFixture = {
       title: 'Music',
       author: 'Dev',
       hideHud: false,

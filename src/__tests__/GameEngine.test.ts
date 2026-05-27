@@ -64,7 +64,7 @@ type GameEngineApi = {
   gameState: {
     pauseCalls: string[];
     resumeCalls: string[];
-    state: { game: { title: string } };
+    state: { game: { title: string; backgroundMusicVideoId?: string } };
     playerRoomIndex?: number;
     objectsByRoom: Map<number, unknown[]>;
     enemyVariableResult: boolean;
