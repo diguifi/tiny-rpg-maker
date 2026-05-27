@@ -15,6 +15,7 @@ import { TileDefinitions } from '../domain/definitions/TileDefinitions';
 import { SkillDefinitions } from '../domain/definitions/SkillDefinitions';
 import { GameConfig } from '../../config/GameConfig';
 import type { SkillCustomizationMap } from '../../types/gameState';
+import { BackgroundMusicEngine } from './BackgroundMusicEngine';
 
 type IntroData = { title: string; author: string };
 
@@ -57,6 +58,7 @@ export class GameEngine {
   movementManager: MovementManager;
   inputManager: InputManager;
   combatStunManager: CombatStunManager;
+  backgroundMusicEngine: BackgroundMusicEngine;
   isDestroyed: boolean;
   awaitingRestart: boolean;
   introVisible: boolean;
@@ -97,6 +99,7 @@ export class GameEngine {
       combatStunManager: this.combatStunManager,
     });
     this.inputManager = new InputManager(this);
+    this.backgroundMusicEngine = new BackgroundMusicEngine();
     this.isDestroyed = false;
     this.awaitingRestart = false;
     this.introVisible = false;
@@ -106,6 +109,7 @@ export class GameEngine {
     this.timeToResetAfterIntro = GameConfig.timing.resetAfterIntro;
     this.gameState.setLevelUpOverlayPresentationSync(() => this.syncLevelUpOverlayPresentation());
     this.setupIntroScreen();
+    this.backgroundMusicEngine.syncFromGame(this.gameState.getGame());
 
     // Ensure there is at least a ground layer
     this.tileManager.ensureDefaultTiles();
@@ -252,6 +256,7 @@ export class GameEngine {
 
   resetGame(): void {
     this.awaitingRestart = false;
+    this.backgroundMusicEngine.stop();
     this.gameState.setGameOver(false);
     this.gameState.resumeGame('game-over');
     this.gameState.resetGame();
@@ -276,6 +281,7 @@ export class GameEngine {
     } else {
       this.resetPaletteToDefault();
     }
+    this.backgroundMusicEngine.syncFromGame(game);
     this.syncDocumentTitle();
     this.startEnemyLoop();
     this.dialogManager.reset();
@@ -427,8 +433,13 @@ export class GameEngine {
     if (!this.introVisible || !this.canDismissIntroScreen) return false;
     this.introVisible = false;
     this.gameState.resumeGame('intro-screen');
+    this.resumeBackgroundMusic();
     this.renderer.draw();
     return true;
+  }
+
+  resumeBackgroundMusic(): void {
+    this.backgroundMusicEngine.play();
   }
 
   isIntroVisible(): boolean {
@@ -584,6 +595,7 @@ export class GameEngine {
   destroy(): void {
     this.isDestroyed = true;
     this.enemyManager.stop();
+    this.backgroundMusicEngine.destroy();
     if (this.renderer.tileAnimationTimer) {
       clearInterval(this.renderer.tileAnimationTimer);
       this.renderer.tileAnimationTimer = null;

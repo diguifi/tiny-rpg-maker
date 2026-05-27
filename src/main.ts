@@ -39,6 +39,9 @@ class TinyRPGApplication {
       const event = ev as CustomEvent<TabActivationDetail>;
       if (event.detail.initial) return;
       gameEngine.resetGame();
+      if (typeof gameEngine.resumeBackgroundMusic === 'function') {
+        gameEngine.resumeBackgroundMusic();
+      }
     });
     document.addEventListener('editor-tab-activated', (ev) => {
       const event = ev as CustomEvent<TabActivationDetail>;

@@ -11,6 +11,14 @@ import {
   StubTileManager
 } from './stubs/index'
 
+class StubBackgroundMusicEngine {
+  play = vi.fn()
+  stop = vi.fn()
+  destroy = vi.fn()
+  syncFromGame = vi.fn()
+  setVideoId = vi.fn()
+}
+
 vi.mock('../runtime/domain/GameState', () => ({ GameState: StubGameState }))
 vi.mock('../runtime/services/TileManager', () => ({ TileManager: StubTileManager }))
 vi.mock('../runtime/services/NPCManager', () => ({ NPCManager: StubNpcManager }))
@@ -20,6 +28,7 @@ vi.mock('../runtime/services/engine/InteractionManager', () => ({ InteractionMan
 vi.mock('../runtime/services/engine/EnemyManager', () => ({ EnemyManager: StubEnemyManager }))
 vi.mock('../runtime/services/engine/MovementManager', () => ({ MovementManager: StubMovementManager }))
 vi.mock('../runtime/adapters/InputManager', () => ({ InputManager: StubInputManager }))
+vi.mock('../runtime/services/BackgroundMusicEngine', () => ({ BackgroundMusicEngine: StubBackgroundMusicEngine }))
 vi.mock('../runtime/adapters/TextResources', () => ({
   TextResources: {
     format: (_key: string, params?: { name?: string }, fallback = '') => {
@@ -101,6 +110,9 @@ type GameEngineApi = {
   setPlayerEndText: (roomIndex: number, text: string) => string;
   setObjectVariable: (type: string, roomIndex: number, variableId: string | null) => unknown;
   getSprites: () => unknown[];
+  importGameData: (data: unknown) => void;
+  destroy: () => void;
+  backgroundMusicEngine?: StubBackgroundMusicEngine;
 };
 
 type GameEngineCtor = new (canvas: HTMLCanvasElement) => GameEngineApi;
@@ -393,5 +405,38 @@ describe('GameEngine business rules (legacy)', () => {
     engine.getSprites()
 
     expect(engine.npcManager.ensureDefaultNPCs.mock.calls.length).toBeGreaterThan(callsBefore)
+  })
+
+  it('syncs background music from imported game data', () => {
+    const engine = createEngine()
+    engine.gameState.state.game.backgroundMusicVideoId = 't0ihNLLZNi0'
+
+    engine.importGameData({ title: 'Music Test' })
+
+    expect(engine.backgroundMusicEngine?.syncFromGame).toHaveBeenCalledWith(engine.gameState.state.game)
+  })
+
+  it('stops background music when the intro screen is shown again', () => {
+    const engine = createEngine()
+
+    engine.resetGame()
+
+    expect(engine.backgroundMusicEngine?.stop).toHaveBeenCalled()
+  })
+
+  it('starts background music after the intro screen is dismissed', () => {
+    const engine = createEngine()
+
+    engine.dismissIntroScreen()
+
+    expect(engine.backgroundMusicEngine?.play).toHaveBeenCalled()
+  })
+
+  it('destroys the background music engine during teardown', () => {
+    const engine = createEngine()
+
+    engine.destroy()
+
+    expect(engine.backgroundMusicEngine?.destroy).toHaveBeenCalled()
   })
 })

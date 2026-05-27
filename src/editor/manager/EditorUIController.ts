@@ -4,6 +4,10 @@ import { setEditorFontDisabled } from '../../config/FontConfig';
 import { bitmapFont } from '../../runtime/adapters/renderer/BitmapFont';
 import { EditorManagerModule } from './EditorManagerModule';
 import type { NpcDefinitionData } from '../../runtime/domain/entities/Npc';
+import {
+    buildBackgroundMusicUrl,
+    normalizeBackgroundMusicVideoId,
+} from '../../runtime/infra/share/BackgroundMusicVideoId';
 
 type SpriteInstance = {
     id: string;
@@ -85,6 +89,17 @@ class EditorUIController extends EditorManagerModule {
         this.updateJSON();
     }
 
+    setBackgroundMusicUrl(url: string) {
+        const game = this.gameEngine.getGame();
+        game.backgroundMusicVideoId = normalizeBackgroundMusicVideoId(url);
+        this.gameEngine.backgroundMusicEngine?.syncFromGame?.(game);
+        if (typeof document !== 'undefined' && document.body.classList.contains('editor-mode')) {
+            this.gameEngine.backgroundMusicEngine?.stop?.();
+        }
+        this.gameEngine.refreshIntroScreen();
+        this.updateJSON();
+    }
+
     setDisablePixelFont(active: boolean = false) {
         this.gameEngine.setDisablePixelFont(Boolean(active));
         bitmapFont.setDisabled(active);
@@ -105,6 +120,9 @@ class EditorUIController extends EditorManagerModule {
         }
         if (this.dom.projectDisableSkills) {
             this.dom.projectDisableSkills.checked = Boolean(game.disableSkills);
+        }
+        if (this.dom.projectBackgroundMusicUrl) {
+            this.dom.projectBackgroundMusicUrl.value = buildBackgroundMusicUrl(game.backgroundMusicVideoId);
         }
         if (this.dom.projectDisablePixelFont) {
             this.dom.projectDisablePixelFont.checked = Boolean(game.disablePixelFont);

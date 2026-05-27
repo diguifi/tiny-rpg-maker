@@ -12,6 +12,7 @@ import { ShareBase64 } from './ShareBase64';
 import { SpriteMatrixRegistry } from '../../domain/sprites/SpriteMatrixRegistry';
 import { ShareSpriteCatalog } from './ShareSpriteCatalog';
 import type { CustomSpriteEntry, SkillCustomizationMap } from '../../../types/gameState';
+import { normalizeBackgroundMusicVideoId } from './BackgroundMusicVideoId';
 
 type CustomSpriteEntryLike = {
     group: string;
@@ -23,6 +24,7 @@ type CustomSpriteEntryLike = {
 type ShareGameData = {
     title?: unknown;
     author?: unknown;
+    backgroundMusicVideoId?: unknown;
     hideHud?: unknown;
     disableSkills?: unknown;
     disablePixelFont?: unknown;
@@ -444,6 +446,10 @@ class ShareEncoder {
         const author = typeof gameData?.author === 'string' ? gameData.author.trim() : '';
         if (author) {
             parts.push('y' + ShareTextCodec.encodeText(author.slice(0, 60)));
+        }
+        const backgroundMusicVideoId = normalizeBackgroundMusicVideoId(gameData?.backgroundMusicVideoId);
+        if (backgroundMusicVideoId) {
+            parts.push('M' + ShareTextCodec.encodeText(backgroundMusicVideoId));
         }
 
         if (gameData?.hideHud) {

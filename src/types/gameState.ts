@@ -174,6 +174,7 @@ export type GameDefinition = {
     author: string;
     palette: string[];
     customPalette?: string[];
+    backgroundMusicVideoId?: string;
     hideHud?: boolean;
     disableSkills?: boolean;
     disablePixelFont?: boolean;

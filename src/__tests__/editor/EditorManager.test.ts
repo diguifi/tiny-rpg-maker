@@ -65,6 +65,7 @@ vi.mock('../../editor/manager/EditorUIController', () => ({
     toggleVariablePanel = vi.fn(); toggleSkillPanel = vi.fn(); toggleTestPanel = vi.fn();
     setTestStartLevel = vi.fn(); setTestSkills = vi.fn(); setGodMode = vi.fn();
     setActiveMobilePanel = vi.fn(); updateGameMetadata = vi.fn(); updateJSON = vi.fn();
+    setBackgroundMusicUrl = vi.fn();
     refreshNpcLocalizedText = vi.fn();
   }
 }));
@@ -354,6 +355,14 @@ describe('EditorManager', () => {
     vi.clearAllMocks();
     mgr.updateJSON();
     expect(mgr.uiController.updateJSON).toHaveBeenCalledTimes(1);
+  });
+
+  it('setBackgroundMusicUrl delegates to uiController', () => {
+    const mgr = new EditorManager(asEditorManagerGameEngine(gameEngine));
+    vi.clearAllMocks();
+    (mgr as unknown as { setBackgroundMusicUrl: (url: string) => void }).setBackgroundMusicUrl('https://youtu.be/t0ihNLLZNi0');
+    expect((mgr.uiController as unknown as { setBackgroundMusicUrl: ReturnType<typeof vi.fn> }).setBackgroundMusicUrl)
+      .toHaveBeenCalledWith('https://youtu.be/t0ihNLLZNi0');
   });
 
   it('handleLanguageChange delegates to uiController and paletteService', () => {

@@ -72,6 +72,7 @@ describe('EditorDomCache', () => {
       <input id="project-test-debug-vision" />
       <input id="project-hide-hud" />
       <input id="project-disable-skills" />
+      <input id="project-background-music-url" />
       <textarea id="json-area"></textarea>
     `;
 
@@ -94,6 +95,7 @@ describe('EditorDomCache', () => {
     expect(cache.projectTestDebugVision).toBeInstanceOf(HTMLInputElement);
     expect(cache.projectHideHud).toBeInstanceOf(HTMLInputElement);
     expect(cache.projectDisableSkills).toBeInstanceOf(HTMLInputElement);
+    expect((cache as { projectBackgroundMusicUrl?: unknown }).projectBackgroundMusicUrl).toBeInstanceOf(HTMLInputElement);
     expect(cache.jsonArea).toBeInstanceOf(HTMLTextAreaElement);
   });
 });

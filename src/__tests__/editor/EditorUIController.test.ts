@@ -32,6 +32,7 @@ function makeManager(stateOverrides: Record<string, unknown> = {}) {
   projectHideHud.type = 'checkbox';
   const projectDisableSkills = document.createElement('input');
   projectDisableSkills.type = 'checkbox';
+  const projectBackgroundMusicUrl = makeInput('');
   const jsonArea = document.createElement('textarea');
   const projectTabDevelopment = document.createElement('button');
   projectTabDevelopment.dataset.projectTabButton = 'development';
@@ -54,6 +55,7 @@ function makeManager(stateOverrides: Record<string, unknown> = {}) {
       authorInput,
       projectHideHud,
       projectDisableSkills,
+      projectBackgroundMusicUrl,
       jsonArea,
       projectTabButtons: [projectTabDevelopment, projectTabTesting],
       projectTabPanels: [projectPanelDevelopment, projectPanelTesting],
@@ -66,7 +68,16 @@ function makeManager(stateOverrides: Record<string, unknown> = {}) {
       updateNpcForm: vi.fn(),
     },
     gameEngine: {
-      getGame: vi.fn(() => ({ title: 'Test Title', author: 'Test Author', hideHud: false, disableSkills: false })),
+      getGame: vi.fn(() => ({
+        title: 'Test Title',
+        author: 'Test Author',
+        hideHud: false,
+        disableSkills: false,
+        backgroundMusicVideoId: undefined
+      })),
+      backgroundMusicEngine: {
+        syncFromGame: vi.fn(),
+      },
       syncDocumentTitle: vi.fn(),
       refreshIntroScreen: vi.fn(),
       exportGameData: vi.fn(() => ({ title: 'Test', author: '' })),
@@ -242,17 +253,66 @@ describe('EditorUIController', () => {
     expect(mgr.renderService.renderVariableUsage).toHaveBeenCalled();
   });
 
+  it('setBackgroundMusicUrl normalizes a YouTube URL into the stored video id', () => {
+    const mgr = makeManager();
+    const game = {
+      title: 'Music',
+      author: 'Dev',
+      hideHud: false,
+      disableSkills: false,
+      backgroundMusicVideoId: undefined
+    };
+    mgr.gameEngine.getGame.mockReturnValue(game);
+    const ctrl = makeController(mgr);
+
+    (ctrl as unknown as { setBackgroundMusicUrl: (url: string) => void })
+      .setBackgroundMusicUrl('https://www.youtube.com/watch?v=t0ihNLLZNi0');
+
+    expect(game.backgroundMusicVideoId).toBe('t0ihNLLZNi0');
+    expect(mgr.gameEngine.backgroundMusicEngine.syncFromGame).toHaveBeenCalledWith(game);
+    expect(mgr.gameEngine.refreshIntroScreen).toHaveBeenCalled();
+    expect(mgr.renderService.renderVariableUsage).toHaveBeenCalled();
+  });
+
+  it('setBackgroundMusicUrl keeps playback stopped while in editor mode', () => {
+    document.body.classList.add('editor-mode');
+    const mgr = makeManager();
+    const game = {
+      title: 'Music',
+      author: 'Dev',
+      hideHud: false,
+      disableSkills: false,
+      backgroundMusicVideoId: undefined
+    };
+    mgr.gameEngine.getGame.mockReturnValue(game);
+    mgr.gameEngine.backgroundMusicEngine.stop = vi.fn();
+    const ctrl = makeController(mgr);
+
+    (ctrl as unknown as { setBackgroundMusicUrl: (url: string) => void })
+      .setBackgroundMusicUrl('https://www.youtube.com/watch?v=t0ihNLLZNi0');
+
+    expect(mgr.gameEngine.backgroundMusicEngine.stop).toHaveBeenCalled();
+    document.body.classList.remove('editor-mode');
+  });
+
   // ─── syncUI ──────────────────────────────────────────────────────────
 
   it('syncUI sets title/author inputs from game and calls updateJSON', () => {
     const mgr = makeManager();
-    mgr.gameEngine.getGame.mockReturnValue({ title: 'My RPG', author: 'Dev', hideHud: true, disableSkills: true });
+    mgr.gameEngine.getGame.mockReturnValue({
+      title: 'My RPG',
+      author: 'Dev',
+      hideHud: true,
+      disableSkills: true,
+      backgroundMusicVideoId: 't0ihNLLZNi0'
+    });
     const ctrl = makeController(mgr);
     ctrl.syncUI();
     expect(mgr.domCache.titleInput.value).toBe('My RPG');
     expect(mgr.domCache.authorInput.value).toBe('Dev');
     expect(mgr.domCache.projectHideHud.checked).toBe(true);
     expect(mgr.domCache.projectDisableSkills.checked).toBe(true);
+    expect(mgr.domCache.projectBackgroundMusicUrl.value).toBe('https://www.youtube.com/watch?v=t0ihNLLZNi0');
     // updateJSON is a real method on the controller; verify its side effects
     expect(mgr.renderService.renderVariableUsage).toHaveBeenCalled();
   });

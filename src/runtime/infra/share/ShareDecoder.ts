@@ -11,6 +11,7 @@ import { ShareVariableCodec } from './ShareVariableCodec';
 import type { CustomSpriteEntry, CustomSpriteVariant } from '../../../types/gameState';
 import { SpriteMatrixRegistry } from '../../domain/sprites/SpriteMatrixRegistry';
 import { ShareSpriteCatalog } from './ShareSpriteCatalog';
+import { normalizeBackgroundMusicVideoId } from './BackgroundMusicVideoId';
 
 type SharePayload = Record<string, string>;
 
@@ -341,6 +342,9 @@ class ShareDecoder {
             : [];
         const title = (ShareTextCodec.decodeText(payload.n, ShareConstants.DEFAULT_TITLE) || ShareConstants.DEFAULT_TITLE).slice(0, 18);
         const author = (ShareTextCodec.decodeText(payload.y, '') || '').slice(0, 18);
+        const backgroundMusicVideoId = version >= ShareConstants.BACKGROUND_MUSIC_VERSION
+            ? normalizeBackgroundMusicVideoId(ShareTextCodec.decodeText(payload.M, ''))
+            : undefined;
         const hideHud = version >= ShareConstants.HIDE_HUD_VERSION && payload.H === '1';
         const disableSkills = version >= ShareConstants.DISABLE_SKILLS_VERSION && payload.R === '1';
         const disablePixelFont = version >= ShareConstants.DISABLE_PIXEL_FONT_VERSION && payload.F === '1';
@@ -463,6 +467,7 @@ class ShareDecoder {
         const result: Record<string, unknown> = {
             title,
             author,
+            backgroundMusicVideoId,
             hideHud,
             disableSkills,
             disablePixelFont,

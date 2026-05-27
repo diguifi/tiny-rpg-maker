@@ -7,6 +7,11 @@ export class StubRenderer {
   introData: unknown = null
   overlayRects: Array<{ x: number; y: number; width: number; height: number }> = []
   draw = vi.fn()
+  spriteFactory = {
+    invalidate: vi.fn()
+  }
+  paletteManager = {}
+  tileAnimationTimer: ReturnType<typeof setInterval> | null = null
 
   overlayRenderer = {
     getLevelUpCardLayout: () => ({ rects: this.overlayRects })

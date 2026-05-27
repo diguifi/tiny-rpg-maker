@@ -11,6 +11,7 @@ const makeGame = (): GameDefinition => ({
   title: 'Old',
   author: 'Author',
   palette: ['#000000', '#111111', '#222222'],
+  backgroundMusicVideoId: undefined,
   hideHud: false,
   disableSkills: false,
   roomSize: 8,
@@ -53,6 +54,7 @@ describe('StateDataManager', () => {
       title: game.title,
       author: game.author,
       palette: game.palette,
+      backgroundMusicVideoId: undefined,
       hideHud: false,
       disableSkills: false,
       disablePixelFont: false,
@@ -240,6 +242,77 @@ describe('StateDataManager', () => {
     expect(game.skillCustomizations).toEqual({
       necromancer: { name: 'Second Wind' }
     });
+  });
+
+  it('exports backgroundMusicVideoId when configured', () => {
+    const game = makeGame();
+    game.backgroundMusicVideoId = 't0ihNLLZNi0';
+    const manager = new StateDataManager({
+      game,
+      worldManager: {} as StateWorldManager,
+      objectManager: {} as StateObjectManager,
+      variableManager: {} as StateVariableManager,
+    });
+
+    const exported = manager.exportGameData() as { backgroundMusicVideoId?: string };
+    expect(exported.backgroundMusicVideoId).toBe('t0ihNLLZNi0');
+  });
+
+  it('imports and trims backgroundMusicVideoId', () => {
+    const game = makeGame();
+    const manager = new StateDataManager({
+      game,
+      worldManager: {
+        normalizeRooms: vi.fn(() => []),
+        normalizeTileMaps: vi.fn(() => [{ ground: [[null]], overlay: [[null]] }]),
+        clampCoordinate: vi.fn((v: number) => v),
+        clampRoomIndex: vi.fn((v: number) => v),
+        setGame: vi.fn(),
+      } as unknown as StateWorldManager,
+      objectManager: {
+        normalizeObjects: vi.fn(() => []),
+        setGame: vi.fn(),
+      } as unknown as StateObjectManager,
+      variableManager: {
+        normalizeVariables: vi.fn(() => []),
+        setGame: vi.fn(),
+      } as unknown as StateVariableManager,
+    });
+
+    manager.importGameData({
+      backgroundMusicVideoId: '  t0ihNLLZNi0  '
+    } as { backgroundMusicVideoId?: string });
+
+    expect(game.backgroundMusicVideoId).toBe('t0ihNLLZNi0');
+  });
+
+  it('clears backgroundMusicVideoId when the imported value is invalid', () => {
+    const game = makeGame();
+    game.backgroundMusicVideoId = 't0ihNLLZNi0';
+    const manager = new StateDataManager({
+      game,
+      worldManager: {
+        normalizeRooms: vi.fn(() => []),
+        normalizeTileMaps: vi.fn(() => [{ ground: [[null]], overlay: [[null]] }]),
+        clampCoordinate: vi.fn((v: number) => v),
+        clampRoomIndex: vi.fn((v: number) => v),
+        setGame: vi.fn(),
+      } as unknown as StateWorldManager,
+      objectManager: {
+        normalizeObjects: vi.fn(() => []),
+        setGame: vi.fn(),
+      } as unknown as StateObjectManager,
+      variableManager: {
+        normalizeVariables: vi.fn(() => []),
+        setGame: vi.fn(),
+      } as unknown as StateVariableManager,
+    });
+
+    manager.importGameData({
+      backgroundMusicVideoId: 'https://example.com/not-youtube'
+    } as { backgroundMusicVideoId?: string });
+
+    expect(game.backgroundMusicVideoId).toBeUndefined();
   });
 });
 

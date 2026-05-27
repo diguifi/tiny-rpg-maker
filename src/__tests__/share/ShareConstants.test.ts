@@ -4,7 +4,7 @@ import { ShareConstants } from '../../runtime/infra/share/ShareConstants';
 
 describe('ShareConstants', () => {
   it('exposes current version and world metadata', () => {
-    expect(ShareConstants.VERSION).toBeGreaterThan(0);
+    expect(ShareConstants.VERSION).toBe(ShareConstants.VERSION_28);
     expect(ShareConstants.WORLD_ROOM_COUNT).toBe(9);
     expect(ShareConstants.MATRIX_SIZE).toBe(8);
   });
@@ -26,5 +26,15 @@ describe('ShareConstants - VERSION_20', () => {
 
     it('VERSION_20 esta em SUPPORTED_VERSIONS', () => {
         expect(ShareConstants.SUPPORTED_VERSIONS.has(ShareConstants.VERSION_20)).toBe(true);
+    });
+});
+
+describe('ShareConstants - VERSION_28', () => {
+    it('VERSION_28 existe e vale 28', () => {
+        expect(ShareConstants.VERSION_28).toBe(28);
+    });
+
+    it('VERSION_28 esta em SUPPORTED_VERSIONS', () => {
+        expect(ShareConstants.SUPPORTED_VERSIONS.has(ShareConstants.VERSION_28)).toBe(true);
     });
 });

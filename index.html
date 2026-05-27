@@ -322,6 +322,7 @@
                                         <button class="project-tab-button" type="button" role="tab" aria-selected="false" data-project-tab-button="testing" data-text-key="project.group.testing">Testes</button>
                                         <button class="project-tab-button" type="button" role="tab" aria-selected="false" data-project-tab-button="appearance" data-text-key="project.group.appearance">Aparência</button>
                                         <button class="project-tab-button" type="button" role="tab" aria-selected="false" data-project-tab-button="info" data-text-key="project.group.info">Informações</button>
+                                        <button class="project-tab-button" type="button" role="tab" aria-selected="false" data-project-tab-button="audio">Audio</button>
                                         <button class="project-tab-button" type="button" role="tab" aria-selected="false" data-project-tab-button="export" data-text-key="project.group.export">Exportação</button>
                                     </div>
 
@@ -516,6 +517,28 @@
                                     </div>
 
                                     <!-- Grupo: Exportação -->
+                                    <div class="project-tab-panel" role="tabpanel" data-project-tab-panel="audio" hidden>
+                                    <div class="project-group project-group--audio">
+                                        <h2 class="project-group__title">Audio</h2>
+                                        <div class="project-variables project-variables--music">
+                                            <details open>
+                                                <summary>Background Music</summary>
+                                                <label class="project-field">
+                                                    <span>YouTube URL</span>
+                                                    <input
+                                                        type="url"
+                                                        id="project-background-music-url"
+                                                        placeholder="https://www.youtube.com/watch?v=t0ihNLLZNi0"
+                                                        inputmode="url"
+                                                        autocomplete="off"
+                                                        spellcheck="false"
+                                                    >
+                                                </label>
+                                            </details>
+                                        </div>
+                                    </div>
+                                    </div>
+
                                     <div class="project-tab-panel" role="tabpanel" data-project-tab-panel="export" hidden>
                                     <div class="project-group project-group--export">
                                         <h2 class="project-group__title" data-text-key="project.group.export">Exportação</h2>
@@ -581,7 +604,7 @@
                 <button type="button" class="pae-tool" data-tool="erase" id="pae-tool-erase" data-text-key="pixelArtEditor.erase">Apagar</button>
             </div>
             <div class="pae-actions">
-                <button type="button" id="pae-reset" data-text-key="pixelArtEditor.reset">Restaurar padrao</button>
+                <button type="button" id="pae-reset" data-text-key="pixelArtEditor.reset">Restaurar padrão</button>
                 <button type="button" id="pae-save" class="pae-save-btn" data-text-key="pixelArtEditor.save">Salvar</button>
             </div>
         </div>

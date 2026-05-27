@@ -93,6 +93,7 @@ function makeDom() {
     projectHideHud.type = 'checkbox';
     const projectDisableSkills = document.createElement('input');
     projectDisableSkills.type = 'checkbox';
+    const projectBackgroundMusicUrl = document.createElement('input');
 
     const shareUrlInput = document.createElement('input');
     shareUrlInput.select = vi.fn();
@@ -131,6 +132,7 @@ function makeDom() {
         projectTestDebugVision,
         projectHideHud,
         projectDisableSkills,
+        projectBackgroundMusicUrl,
         shareUrlInput,
     };
 }
@@ -223,6 +225,7 @@ function makeManager() {
         setGodMode: vi.fn(),
         setHideHud: vi.fn(),
         setDisableSkills: vi.fn(),
+        setBackgroundMusicUrl: vi.fn(),
         setTestSkills: vi.fn(),
         desselectAllAndRender: vi.fn(),
         handleKey: vi.fn(),
@@ -358,6 +361,12 @@ describe('EditorEventBinder', () => {
         dom.projectTestGodMode.checked = false;
         dom.projectTestGodMode.dispatchEvent(new Event('change', { bubbles: true }));
         expect(manager.setGodMode).toHaveBeenCalledWith(false);
+    });
+
+    it('projectBackgroundMusicUrl input calls manager.setBackgroundMusicUrl with the raw URL', () => {
+        dom.projectBackgroundMusicUrl.value = 'https://youtu.be/t0ihNLLZNi0';
+        dom.projectBackgroundMusicUrl.dispatchEvent(new Event('input', { bubbles: true }));
+        expect(manager.setBackgroundMusicUrl).toHaveBeenCalledWith('https://youtu.be/t0ihNLLZNi0');
     });
 
     // 13. projectTestDebugVision change

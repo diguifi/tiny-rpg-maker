@@ -83,6 +83,23 @@ describe('ShareEncoder', () => {
       }
     });
   });
+
+  it('emits an M segment when backgroundMusicVideoId exists', () => {
+    const code = ShareEncoder.buildShareCode({
+      backgroundMusicVideoId: 't0ihNLLZNi0'
+    } as { backgroundMusicVideoId?: string });
+
+    expect(code.split('.').some((segment) => segment.startsWith('M'))).toBe(true);
+  });
+
+  it('preserves backgroundMusicVideoId through an encode/decode round trip', () => {
+    const code = ShareEncoder.buildShareCode({
+      backgroundMusicVideoId: 't0ihNLLZNi0'
+    } as { backgroundMusicVideoId?: string });
+    const decoded = ShareDecoder.decodeShareCode(code) as ({ backgroundMusicVideoId?: string } | null);
+
+    expect(decoded?.backgroundMusicVideoId).toBe('t0ihNLLZNi0');
+  });
 });
 
 describe('ShareEncoder - customSprites', () => {

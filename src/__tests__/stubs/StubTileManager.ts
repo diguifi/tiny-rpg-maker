@@ -3,6 +3,7 @@ import type { StubGameState } from './StubGameState'
 
 export class StubTileManager {
   ensureDefaultTiles = vi.fn()
+  regenerateTilesWithPalette = vi.fn()
   lastSet: { x: number; y: number; tileId: string; roomIndex: number } | null = null
   lastGetRoom: number | null = null
 
