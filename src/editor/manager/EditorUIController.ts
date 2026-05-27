@@ -17,6 +17,15 @@ type SpriteInstance = {
     textKey?: string | null;
 };
 
+type ProjectGameSettings = {
+    title?: string;
+    author?: string;
+    hideHud?: boolean;
+    disableSkills?: boolean;
+    disablePixelFont?: boolean;
+    backgroundMusicVideoId?: string;
+};
+
 class EditorUIController extends EditorManagerModule {
     updateGameMetadata() {
         const game = this.gameEngine.getGame();
@@ -90,11 +99,11 @@ class EditorUIController extends EditorManagerModule {
     }
 
     setBackgroundMusicUrl(url: string) {
-        const game = this.gameEngine.getGame();
+        const game = this.gameEngine.getGame() as ProjectGameSettings;
         game.backgroundMusicVideoId = normalizeBackgroundMusicVideoId(url);
-        this.gameEngine.backgroundMusicEngine?.syncFromGame?.(game);
+        this.gameEngine.backgroundMusicEngine.syncFromGame(game);
         if (typeof document !== 'undefined' && document.body.classList.contains('editor-mode')) {
-            this.gameEngine.backgroundMusicEngine?.stop?.();
+            this.gameEngine.backgroundMusicEngine.stop();
         }
         this.gameEngine.refreshIntroScreen();
         this.updateJSON();
@@ -108,7 +117,7 @@ class EditorUIController extends EditorManagerModule {
     }
 
     syncUI() {
-        const game = this.gameEngine.getGame();
+        const game = this.gameEngine.getGame() as ProjectGameSettings;
         if (this.dom.titleInput) {
             this.dom.titleInput.value = game.title || '';
         }

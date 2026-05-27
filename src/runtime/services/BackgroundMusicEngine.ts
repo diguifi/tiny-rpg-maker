@@ -30,7 +30,7 @@ class BackgroundMusicEngine {
     }
 
     syncFromGame(game: { backgroundMusicVideoId?: string }): void {
-        this.setVideoId(game?.backgroundMusicVideoId);
+        this.setVideoId(game.backgroundMusicVideoId);
     }
 
     destroy(): void {

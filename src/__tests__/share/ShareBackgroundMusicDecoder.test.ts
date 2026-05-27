@@ -21,7 +21,7 @@ describe('ShareDecoder background music compatibility', () => {
   });
 
   it('decodes the M segment into backgroundMusicVideoId', () => {
-    const version = (ShareConstants.VERSION + 1).toString(36);
+    const version = ShareConstants.BACKGROUND_MUSIC_VERSION.toString(36);
     const code = `v${version}.M${ShareTextCodec.encodeText('t0ihNLLZNi0')}`;
     const decoded = ShareDecoder.decodeShareCode(code) as ({ backgroundMusicVideoId?: string } | null);
 
