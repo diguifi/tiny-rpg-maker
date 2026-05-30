@@ -245,6 +245,7 @@ class CombatManager {
     enemyAttackMissed: boolean
   ): void {
     soundEngine.play('playerAttack');
+    this.triggerSwordSwing(player, enemyPos);
     combatAnimator.startLungeAttack('player', enemyPos, () => {
       if (!this.checkCombatRangeOrCancel(enemy)) return;
 
@@ -320,6 +321,7 @@ class CombatManager {
 
       // Player counter-attacks (consolidated damage logic)
       soundEngine.play('playerAttack');
+      this.triggerSwordSwing(player, enemyPos);
       combatAnimator.startLungeAttack('player', enemyPos, () => {
         if (!this.checkCombatRangeOrCancel(enemy)) return;
 
@@ -339,6 +341,19 @@ class CombatManager {
           this.finishCombat();
         }
       });
+    });
+  }
+
+  /**
+   * Trigger the visual sword-swing animation when the player attacks.
+   * Only plays when the player is actually carrying a sword.
+   */
+  private triggerSwordSwing(player: PlayerState, enemyPos: { x: number; y: number }): void {
+    const swordType = this.gameState.getSwordType?.();
+    if (!swordType) return;
+    this.renderer.startSwordSwing?.(swordType, {
+      x: enemyPos.x - player.x,
+      y: enemyPos.y - player.y,
     });
   }
 

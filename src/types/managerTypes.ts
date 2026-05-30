@@ -36,6 +36,7 @@ export type GameStateApi = {
   // Combat-related methods (type-safe)
   getPlayerDamage?: () => number;
   consumeSwordDurability?: () => boolean;
+  getSwordType?: () => string | null;
 };
 
 export type RendererApi = {
@@ -51,6 +52,7 @@ export type RendererApi = {
   particleSystem?: ParticleSystemApi;
   entityRenderer?: EntityRendererApi;
   attackTelegraph?: AttackTelegraphApi;
+  startSwordSwing?: (swordType: string, direction: { x: number; y: number }) => void;
 };
 
 export type CombatAnimatorApi = {

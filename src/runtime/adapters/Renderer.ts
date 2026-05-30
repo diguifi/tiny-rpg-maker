@@ -13,6 +13,7 @@ import { RendererCameraShake } from './renderer/RendererCameraShake';
 import { RendererFloatingText } from './renderer/RendererFloatingText';
 import { RendererParticleSystem } from './renderer/RendererParticleSystem';
 import { RendererAttackTelegraph } from './renderer/RendererAttackTelegraph';
+import { RendererSwordSwing } from './renderer/RendererSwordSwing';
 import type { TileDefinition } from '../domain/definitions/tileTypes';
 import { GameConfig } from '../../config/GameConfig';
 import { FONT_BITMAP_SRC } from '../../config/FontConfig';
@@ -74,6 +75,7 @@ class Renderer {
     floatingText!: RendererFloatingText;
     particleSystem!: RendererParticleSystem;
     attackTelegraph!: RendererAttackTelegraph;
+    swordSwing!: RendererSwordSwing;
     drawIconIdNextFrame: string;
     timeIconOverPlayer: number;
     tileAnimationInterval: number;
@@ -115,6 +117,7 @@ class Renderer {
         this.floatingText = new RendererFloatingText(this as never);
         this.particleSystem = new RendererParticleSystem(this as never);
         this.attackTelegraph = new RendererAttackTelegraph(this as never);
+        this.swordSwing = new RendererSwordSwing(this as never);
 
         // Connect attack telegraph to entity renderer for wind-up animations
         this.entityRenderer.attackTelegraph = this.attackTelegraph;
@@ -289,6 +292,8 @@ class Renderer {
                 this.drawEnemyVisionDebug(ctx);
                 this.entityRenderer.drawEnemies(ctx);
                 this.entityRenderer.drawPlayer(ctx);
+                // Draw the sword swing on top of the player while attacking
+                this.swordSwing.draw(ctx);
                 // Draw enemy life markers AFTER player to ensure they're always visible on top
                 this.entityRenderer.drawAllEnemyLivesMarkers(ctx);
                 // Draw combat effects after entities
@@ -472,6 +477,15 @@ class Renderer {
 
     showCombatIndicator(text: string, options: Record<string, unknown> = {}) {
         this.effectsManager.showCombatIndicator(text, options);
+    }
+
+    /**
+     * Start a sword-swing animation toward an enemy (player attack only).
+     * @param swordType Equipped sword item type
+     * @param direction Tile-space vector from the player toward the enemy
+     */
+    startSwordSwing(swordType: string, direction: { x: number; y: number }) {
+        this.swordSwing.start(swordType, direction);
     }
 
     flashScreen(options: Record<string, unknown> = {}) {

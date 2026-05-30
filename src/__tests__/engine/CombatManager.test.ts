@@ -48,6 +48,7 @@ describe('CombatManager', () => {
       entityRenderer: {
         flashEntity: vi.fn(),
       },
+      startSwordSwing: vi.fn(),
     };
   };
 
@@ -203,6 +204,36 @@ describe('CombatManager', () => {
       manager.handleEnemyCollision(0);
 
       expect(renderer.showCombatIndicator).toHaveBeenCalledWith('Cooldown!', { duration: 700 });
+    });
+  });
+
+  describe('Sword Swing Animation', () => {
+    it('starts a sword swing toward the enemy when the player attacks with a sword', () => {
+      const gameState = createCombatGameState({
+        getEnemies: vi.fn(() => [{ id: 'e1', type: 'rat', roomIndex: 0, x: 2, y: 1, lastX: 2, lives: 1 }]),
+        getPlayer: vi.fn(() => ({ x: 1, y: 1, roomIndex: 0, lives: 3, level: 1 })),
+        getSwordType: vi.fn(() => 'sword'),
+      });
+      const renderer = createRenderer();
+      const manager = new CombatManager(gameState, renderer);
+
+      manager.handleEnemyCollision(0, { initiator: 'player' });
+
+      expect(renderer.startSwordSwing).toHaveBeenCalledWith('sword', { x: 1, y: 0 });
+    });
+
+    it('does not start a sword swing when the player has no sword', () => {
+      const gameState = createCombatGameState({
+        getEnemies: vi.fn(() => [{ id: 'e1', type: 'rat', roomIndex: 0, x: 2, y: 1, lastX: 2, lives: 1 }]),
+        getPlayer: vi.fn(() => ({ x: 1, y: 1, roomIndex: 0, lives: 3, level: 1 })),
+        getSwordType: vi.fn(() => null),
+      });
+      const renderer = createRenderer();
+      const manager = new CombatManager(gameState, renderer);
+
+      manager.handleEnemyCollision(0, { initiator: 'player' });
+
+      expect(renderer.startSwordSwing).not.toHaveBeenCalled();
     });
   });
 
