@@ -204,6 +204,7 @@ export class OnlineModeApplication {
                 roomTracker.updatePlayer(msg.playerId, msg.roomIndex);
                 gameEngine.setOnlineActiveRooms(roomTracker.getOccupiedRooms());
                 updateEnemyAiRemotePlayers();
+                gameEngine.checkPressurePlatesForGuest(msg.x, msg.y, msg.roomIndex);
             }
             if (!existing || existing.roomIndex !== msg.roomIndex || existing.x !== msg.x || existing.y !== msg.y) {
                 gameEngine.renderer.entityRenderer.setRemotePlayers([...remotePositions.values()]);
@@ -292,15 +293,8 @@ export class OnlineModeApplication {
                     sync?.applyDiff(msg.diff);
                     gameEngine.renderer.draw();
                 });
-
-                const varIds = ShareConstants.VARIABLE_IDS;
-                gameEngine.gameState.onVariableChanged = (variableId, value) => {
-                    const index = varIds.indexOf(variableId);
-                    if (index < 0) return;
-                    const encoded = typeof value === 'boolean' ? (value ? 1 : 0)
-                        : typeof value === 'number' ? value : 0;
-                    manager.client.send({ type: 'variable-changed', variableIndex: index, newValue: encoded });
-                };
+                // Guests do not send variable changes — the host is the authority.
+                // State arrives via world-state-diff from the host broadcaster.
             }
         });
 
@@ -497,7 +491,9 @@ export class OnlineModeApplication {
             manager.client.send({ type: 'item-picked', itemId, roomIndex, byPlayerId: manager.client.sessionToken });
         };
         gameEngine.onOnlineObjectTriggered = (objectId, roomIndex, newState) => {
-            manager.client.send({ type: 'object-triggered', objectId, roomIndex, newState });
+            // Only the host broadcasts object state — guests send input signals only
+            if (!manager.isHost) return;
+            manager.client.send({ type: 'object-triggered', objectId, roomIndex, newState, byPlayerId: manager.client.sessionToken });
         };
     }
 
@@ -525,6 +521,9 @@ export class OnlineModeApplication {
             }
         });
         manager.client.on('object-triggered', (msg) => {
+            // Ignore echoes of our own messages — prevents stale echoes from
+            // overwriting a subsequent toggle that arrived before the echo.
+            if (msg.byPlayerId === manager.client.sessionToken) return;
             const objs = gameEngine.gameState.getObjectsForRoom(msg.roomIndex) as Array<{
                 id?: string;
                 roomIndex: number;

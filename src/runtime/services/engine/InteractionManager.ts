@@ -475,6 +475,37 @@ class InteractionManager {
     }
   }
 
+  checkPressurePlatesAt(player: PlayerPosition): boolean {
+    const OT = this.types;
+    const allObjects = this.gameState.getAllObjects?.() || [];
+    const pushBoxes = allObjects.filter((o) => o.type === OT.PUSH_BOX);
+    let changed = false;
+    for (const object of allObjects) {
+      if (object.type !== OT.PRESSURE_PLATE) continue;
+      const variableId = this.gameState.normalizeVariableId?.(object.variableId ?? null) ?? null;
+      if (!variableId) continue;
+      const playerOnPlate =
+        object.roomIndex === player.roomIndex &&
+        object.x === player.x &&
+        object.y === player.y;
+      const boxOnPlate = pushBoxes.some(
+        (box) => box.roomIndex === object.roomIndex && box.x === object.x && box.y === object.y
+      );
+      const isActivated = playerOnPlate || boxOnPlate;
+      const wasActivated = Boolean(object.activated);
+      if (isActivated && !wasActivated) {
+        object.activated = true;
+        this.gameState.setVariableValue?.(variableId, true);
+        changed = true;
+      } else if (!isActivated && wasActivated) {
+        object.activated = false;
+        this.gameState.setVariableValue?.(variableId, false);
+        changed = true;
+      }
+    }
+    return changed;
+  }
+
   checkNpcs(npcs: NpcState[], player: PlayerPosition): void {
     for (const npc of npcs) {
       if (!npc.placed) continue;

@@ -163,6 +163,7 @@ export type ObjectTriggeredMsg = {
     objectId: string;
     roomIndex: number;
     newState: boolean;
+    byPlayerId?: string;
 };
 
 export type VariableChangedMsg = {

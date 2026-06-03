@@ -719,6 +719,11 @@ export class GameEngine {
     }
   }
 
+  checkPressurePlatesForGuest(guestX: number, guestY: number, guestRoomIndex: number): void {
+    const changed = this.interactionManager.checkPressurePlatesAt({ x: guestX, y: guestY, roomIndex: guestRoomIndex });
+    if (changed) this.onOnlineStateChanged?.();
+  }
+
   processGuestAttack(enemyId: string): void {
     this.processGuestAttackDamage(enemyId, 1);
   }
