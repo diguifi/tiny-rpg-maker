@@ -497,4 +497,20 @@ describe('GameEngine business rules (legacy)', () => {
     expect(engine.enemyManager.start.mock.calls.length).toBe(0)
     expect(engine.enemyManager.stop.mock.calls.length).toBeGreaterThan(0)
   })
+
+  it('skips local handlePlayerInteractions in guest mode but still fires the interact signal', () => {
+    const engine = createEngine()
+    const engineAny = engine as unknown as { setOnlineMode: (m: string) => void; onOnlineInteract: (() => void) | null }
+    engineAny.setOnlineMode('online-guest')
+
+    const interactSignalFired: boolean[] = []
+    engineAny.onOnlineInteract = () => { interactSignalFired.push(true) }
+
+    engine.checkInteractions()
+
+    // Local mutation must be suppressed for guests
+    expect(engine.interactionManager.handlePlayerInteractions.mock.calls.length).toBe(0)
+    // Outbound signal to host must still be sent
+    expect(interactSignalFired.length).toBe(1)
+  })
 })

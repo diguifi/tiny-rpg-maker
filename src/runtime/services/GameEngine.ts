@@ -155,7 +155,11 @@ export class GameEngine {
   }
 
   checkInteractions(): void {
-    this.interactionManager.handlePlayerInteractions();
+    // Guests must not apply local state mutations (switch toggles, sounds) before
+    // the host confirms them. Only the signal is sent; the host is authoritative.
+    if (!this.isGuestMode()) {
+      this.interactionManager.handlePlayerInteractions();
+    }
     this.onOnlineInteract?.();
     this.onOnlineStateChanged?.();
   }
