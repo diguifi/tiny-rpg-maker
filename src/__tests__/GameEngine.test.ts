@@ -500,11 +500,11 @@ describe('GameEngine business rules (legacy)', () => {
 
   it('in guest mode: handlePlayerInteractions runs (items/NPCs/exits work locally), guestMode flag set, interact signal fires', () => {
     const engine = createEngine()
-    const engineAny = engine as unknown as { setOnlineMode: (m: string) => void; onOnlineInteract: (() => void) | null }
-    engineAny.setOnlineMode('online-guest')
+    const engineAny = engine as unknown as { online: { setMode: (m: string) => void; onInteract: (() => void) | null } }
+    engineAny.online.setMode('online-guest')
 
     const interactSignalFired: boolean[] = []
-    engineAny.onOnlineInteract = () => { interactSignalFired.push(true) }
+    engineAny.online.onInteract = () => { interactSignalFired.push(true) }
 
     engine.checkInteractions()
 

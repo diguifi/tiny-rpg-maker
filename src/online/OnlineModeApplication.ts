@@ -124,14 +124,14 @@ export class OnlineModeApplication {
         };
 
         manager.onHostPromoted(() => {
-            gameEngine.setOnlineMode('online-host');
+            gameEngine.online.setMode('online-host');
             gameEngine.startEnemyLoop();
             const gs = gameEngine.gameState;
             if (!broadcaster) {
                 broadcaster = new OnlineStateBroadcaster(manager.client, gs);
             }
             broadcaster.start();
-            gameEngine.onOnlineStateChanged = () => broadcaster?.triggerNow();
+            gameEngine.online.onStateChanged = () => broadcaster?.triggerNow();
             manager.client.send({ type: 'full-state-snapshot', snapshot: broadcaster.buildSnapshot() });
         });
 
@@ -161,7 +161,7 @@ export class OnlineModeApplication {
         };
 
         const updateEnemyAiRemotePlayers = () => {
-            gameEngine.setRemotePlayersForEnemyAI(
+            gameEngine.online.setRemotePlayersForEnemyAI(
                 [...remotePositions.values()]
                     .map((rp) => ({ id: rp.id, x: rp.x, y: rp.y, roomIndex: rp.roomIndex, alive: rp.alive })),
             );
@@ -229,12 +229,12 @@ export class OnlineModeApplication {
             });
             if (manager.isHost) {
                 roomTracker.updatePlayer(msg.playerId, msg.roomIndex);
-                gameEngine.setOnlineActiveRooms(roomTracker.getOccupiedRooms());
+                gameEngine.online.setActiveRooms(roomTracker.getOccupiedRooms());
                 updateEnemyAiRemotePlayers();
             }
             if (!existing || existing.roomIndex !== msg.roomIndex || existing.x !== msg.x || existing.y !== msg.y) {
                 if (manager.isHost) {
-                    gameEngine.checkPressurePlatesForGuest(msg.x, msg.y, msg.roomIndex);
+                    gameEngine.online.checkPressurePlatesForGuest(msg.x, msg.y, msg.roomIndex);
                 }
                 gameEngine.renderer.entityRenderer.setRemotePlayers([...remotePositions.values()]);
                 gameEngine.renderer.draw();
@@ -246,22 +246,22 @@ export class OnlineModeApplication {
             gameEngine.renderer.entityRenderer.setRemotePlayers([...remotePositions.values()]);
             if (manager.isHost) {
                 roomTracker.removePlayer(msg.playerId);
-                gameEngine.setOnlineActiveRooms(roomTracker.getOccupiedRooms());
+                gameEngine.online.setActiveRooms(roomTracker.getOccupiedRooms());
                 updateEnemyAiRemotePlayers();
                 // Deactivate any pressure plate the departing guest was standing on.
                 // Passing an impossible position (-1, -1, -1) guarantees playerOnPlate
                 // is false for every plate, so plates held only by the guest are released.
-                gameEngine.checkPressurePlatesForGuest(-1, -1, -1);
+                gameEngine.online.checkPressurePlatesForGuest(-1, -1, -1);
             }
         });
 
         this.bindGameEngineOutboundEvents(gameEngine, manager);
         this.bindSharedWorldEvents(gameEngine, manager, () => sync, (nextSync) => { sync = nextSync; });
 
-        gameEngine.onOnlinePlayerDefeated = () => {
+        gameEngine.online.onPlayerDefeated = () => {
             manager.client.send({ type: 'player-died', playerId: manager.client.sessionToken });
         };
-        gameEngine.onOnlineGameCompletion = () => {
+        gameEngine.online.onGameCompletion = () => {
             const name = sessionStorage.getItem('tiny-rpg-player-name') ?? 'Jogador';
             manager.client.send({ type: 'game-over', winnerId: manager.client.sessionToken, winnerName: name });
         };
@@ -269,7 +269,7 @@ export class OnlineModeApplication {
         manager.onGameStart(() => {
             lobby.dismiss();
             const mode = manager.isHost ? 'online-host' : 'online-guest';
-            gameEngine.setOnlineMode(mode);
+            gameEngine.online.setMode(mode);
 
             if (!manager.isHost) {
                 this.applyGuestSpawn(gameEngine);
@@ -287,7 +287,7 @@ export class OnlineModeApplication {
             if (manager.isHost) {
                 positionSender.onRoomChanged = (roomIndex) => {
                     roomTracker.updatePlayer(manager.client.sessionToken, roomIndex);
-                    gameEngine.setOnlineActiveRooms(roomTracker.getOccupiedRooms());
+                    gameEngine.online.setActiveRooms(roomTracker.getOccupiedRooms());
                 };
             }
             positionSender.start();
@@ -295,7 +295,7 @@ export class OnlineModeApplication {
             if (manager.isHost) {
                 const localRoom = gs.getPlayer()?.roomIndex ?? 0;
                 roomTracker.updatePlayer(manager.client.sessionToken, localRoom);
-                gameEngine.setOnlineActiveRooms(roomTracker.getOccupiedRooms());
+                gameEngine.online.setActiveRooms(roomTracker.getOccupiedRooms());
             }
 
             if (!manager.isHost) {
@@ -312,8 +312,8 @@ export class OnlineModeApplication {
                 for (const targetId of pendingSnapshotTargets.splice(0)) {
                     manager.client.send({ type: 'full-state-snapshot', snapshot: broadcaster.buildSnapshot(), targetId });
                 }
-                gameEngine.onOnlineStateChanged = () => broadcaster?.triggerNow();
-                gameEngine.onOnlineMove = () => positionSender?.sendNow();
+                gameEngine.online.onStateChanged = () => broadcaster?.triggerNow();
+                gameEngine.online.onMove = () => positionSender?.sendNow();
             } else {
                 if (!sync) {
                     sync = new OnlineStateSync(gs, () => gameEngine.renderer.draw());
@@ -332,17 +332,17 @@ export class OnlineModeApplication {
                 // After item pickup or object trigger, force a player-position update so
                 // HP, keys, equipment and level changes reach the host immediately,
                 // not waiting until the next movement (sendNow has a position-change guard).
-                gameEngine.onOnlineItemPicked = (itemId, roomIndex) => {
+                gameEngine.online.onItemPicked = (itemId, roomIndex) => {
                     manager.client.send({ type: 'item-picked', itemId, roomIndex, byPlayerId: manager.client.sessionToken });
                     positionSender?.sendNow(true);
                 };
-                gameEngine.onOnlineObjectTriggered = (objectId, roomIndex, newState) => {
+                gameEngine.online.onObjectTriggered = (objectId, roomIndex, newState) => {
                     manager.client.send({ type: 'object-triggered', objectId, roomIndex, newState, byPlayerId: manager.client.sessionToken });
                     positionSender?.sendNow(true);
                 };
                 // After pickup overlay closes, equipment/HP effects are applied — send
                 // updated player-position so host sees the new stats immediately.
-                gameEngine.onOnlineStateChanged = () => positionSender?.sendNow(true);
+                gameEngine.online.onStateChanged = () => positionSender?.sendNow(true);
             }
 
             // Initial render so pre-seeded remote players (from player-list) are visible
@@ -451,7 +451,7 @@ export class OnlineModeApplication {
             playerName,
             onPlaySolo: () => {
                 manager.cancelLobby();
-                gameEngine.setOnlineMode('solo');
+                gameEngine.online.setMode('solo');
             },
         });
 
@@ -574,7 +574,7 @@ export class OnlineModeApplication {
     }
 
     private static bindGameEngineOutboundEvents(gameEngine: GameEngine, manager: OnlineManager): void {
-        gameEngine.onOnlineEnemyDied = (enemyId, roomIndex) => {
+        gameEngine.online.onEnemyDied = (enemyId, roomIndex) => {
             if (manager.isHost) {
                 manager.client.send({ type: 'enemy-died', enemyId, roomIndex });
             }
@@ -584,10 +584,10 @@ export class OnlineModeApplication {
                 manager.client.send({ type: 'player-took-damage', playerId, damage });
             }
         };
-        gameEngine.onOnlineItemPicked = (itemId, roomIndex) => {
+        gameEngine.online.onItemPicked = (itemId, roomIndex) => {
             manager.client.send({ type: 'item-picked', itemId, roomIndex, byPlayerId: manager.client.sessionToken });
         };
-        gameEngine.onOnlineObjectTriggered = (objectId, roomIndex, newState) => {
+        gameEngine.online.onObjectTriggered = (objectId, roomIndex, newState) => {
             // Guests can trigger chests and locked doors — byPlayerId lets the echo
             // filter skip re-applying the sender's own message. Switches are safe
             // because handleSwitch is a no-op in guestMode.
@@ -633,7 +633,7 @@ export class OnlineModeApplication {
             // everything derived from it (pressure plates, variable-doors, LEDs,
             // logic gates) updates together with the lever — not only when/if a
             // separate world-state-diff carrying the variable arrives.
-            gameEngine.applyRemoteObjectTriggered(msg.objectId, msg.roomIndex, msg.newState);
+            gameEngine.online.applyRemoteObjectTriggered(msg.objectId, msg.roomIndex, msg.newState);
         });
     }
 
@@ -652,13 +652,13 @@ export class OnlineModeApplication {
         getPositionSender: () => OnlinePositionSender | null,
     ): void {
         const relay = new OnlineInputRelay(manager.client);
-        gameEngine.onOnlineMove = (dx, dy) => {
+        gameEngine.online.onMove = (dx, dy) => {
             relay.sendMove(dx, dy);
             getPositionSender()?.sendNow();
         };
-        gameEngine.onOnlineInteract = (x, y, roomIndex) => relay.sendInteract(x, y, roomIndex);
+        gameEngine.online.onInteract = (x, y, roomIndex) => relay.sendInteract(x, y, roomIndex);
         gameEngine.enemyManager.onGuestAttack = (enemyId) => {
-            const damage = gameEngine.prepareOnlineGuestAttack(enemyId);
+            const damage = gameEngine.online.prepareGuestAttack(enemyId);
             if (damage === null) return;
             relay.sendAttack(enemyId, damage);
             getPositionSender()?.sendNow(true);
@@ -674,16 +674,16 @@ export class OnlineModeApplication {
             if (msg.playerId === manager.client.sessionToken) return;
             const guestPos = remotePositions.get(msg.playerId);
             if (msg.action === 'attack' && msg.enemyId) {
-                gameEngine.processGuestAttackDamage(msg.enemyId, msg.damage);
+                gameEngine.online.processGuestAttackDamage(msg.enemyId, msg.damage);
             } else if (msg.action === 'interact') {
                 const ix = msg.x ?? guestPos?.x;
                 const iy = msg.y ?? guestPos?.y;
                 const iRoom = msg.roomIndex ?? guestPos?.roomIndex;
                 if (ix !== undefined && iy !== undefined && iRoom !== undefined) {
-                    gameEngine.processGuestInteract(ix, iy, iRoom);
+                    gameEngine.online.processGuestInteract(ix, iy, iRoom);
                 }
             } else if (msg.action === 'move' && msg.dx !== undefined && msg.dy !== undefined) {
-                if (guestPos) gameEngine.processGuestMove(guestPos.x, guestPos.y, guestPos.roomIndex, msg.dx, msg.dy);
+                if (guestPos) gameEngine.online.processGuestMove(guestPos.x, guestPos.y, guestPos.roomIndex, msg.dx, msg.dy);
             }
         });
     }

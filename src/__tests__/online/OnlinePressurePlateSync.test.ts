@@ -107,7 +107,7 @@ describe('online pressure-plate sync (lever -> plate)', () => {
         canvas.width = 128;
         canvas.height = 128;
         const engine = new GameEngine(canvas);
-        engine.setOnlineMode('online-guest');
+        engine.online.setMode('online-guest');
 
         engine.gameState.game.variables = [{ id: 'var-1', value: false }];
         engine.gameState.game.objects = [
@@ -116,7 +116,7 @@ describe('online pressure-plate sync (lever -> plate)', () => {
         ];
 
         // Guest receives ONLY the lever signal (object-triggered). No world-state-diff.
-        engine.applyRemoteObjectTriggered('switch-0', 0, true);
+        engine.online.applyRemoteObjectTriggered('switch-0', 0, true);
 
         const lever = (engine.gameState.getObjectsForRoom(0) as Array<{ id: string; on?: boolean }>)
             .find((o) => o.id === 'switch-0');
@@ -124,5 +124,32 @@ describe('online pressure-plate sync (lever -> plate)', () => {
         expect(lever?.on).toBe(true);
         // ... and the plate, derived from the same variable, lights up too.
         expect(engine.isVariableOn('var-1')).toBe(true);
+    });
+
+    // The core principle: variable state is the single source of truth on the guest.
+    // The renderer derives EVERY variable-driven object (pressure plates, variable-doors,
+    // LEDs) from isVariableOn(variableId). So syncing a single variable is enough to make
+    // all of them correct at once — no per-object messages required. The guest only ever
+    // MIRRORS variables (it never authors them), which is what keeps host and guest in sync.
+    it('a single synced variable drives every object derived from it (plate, variable-door, LED)', () => {
+        const guest = new GameState();
+        guest.game.variables = [{ id: 'var-1', value: false }];
+        guest.game.objects = [
+            { id: 'plate-0', type: 'pressure-plate', x: 3, y: 3, roomIndex: 0, variableId: 'var-1' },
+            { id: 'door-0', type: 'door-variable', x: 4, y: 4, roomIndex: 0, variableId: 'var-1' },
+            { id: 'led-0', type: 'logic-led', x: 5, y: 5, roomIndex: 0, variableId: 'var-1' },
+        ];
+
+        const sync = new OnlineStateSync(guest as never);
+        sync.applySnapshot({ enemies: {}, variables: {}, objects: {}, items: {}, players: [] });
+        expect(guest.isVariableOn('var-1')).toBe(false);
+
+        // Host flips var-1 and broadcasts ONLY the variable (index 0 -> 'var-1'). No
+        // object diffs, no object-triggered messages.
+        sync.applyDiff({ tick: 1, variables: { 0: 1 } });
+
+        // isVariableOn is what the renderer reads for the plate, the variable-door AND
+        // the LED — so all three are now correct on the guest from that one variable.
+        expect(guest.isVariableOn('var-1')).toBe(true);
     });
 });
