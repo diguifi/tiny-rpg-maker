@@ -143,6 +143,9 @@ export type PlayerInputMsg = {
     dy?: number;
     enemyId?: string;
     damage?: number;
+    x?: number;
+    y?: number;
+    roomIndex?: number;
 };
 
 export type EnemyDiedMsg = {

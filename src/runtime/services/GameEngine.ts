@@ -69,7 +69,7 @@ export class GameEngine {
   onOnlinePlayerDefeated: (() => void) | null = null;
   onOnlineGameCompletion: (() => void) | null = null;
   onOnlineMove: ((dx: number, dy: number) => void) | null = null;
-  onOnlineInteract: (() => void) | null = null;
+  onOnlineInteract: ((x: number, y: number, roomIndex: number) => void) | null = null;
   onOnlineEnemyDied: ((enemyId: string, roomIndex: number) => void) | null = null;
   onOnlineItemPicked: ((itemId: string, roomIndex: number) => void) | null = null;
   onOnlineObjectTriggered: ((objectId: string, roomIndex: number, newState: boolean) => void) | null = null;
@@ -152,10 +152,10 @@ export class GameEngine {
   tryMove(dx: number, dy: number): void {
     this.movementManager.tryMove(dx, dy);
     this.onOnlineMove?.(dx, dy);
-    // Signal any tile-based interaction (switch, etc.) to the host so it can
-    // apply authoritative state. movementManager already called handlePlayerInteractions
-    // internally; this only fires the relay for the online guest path.
-    this.onOnlineInteract?.();
+    // Signal any tile-based interaction (switch, etc.) to the host, carrying the
+    // player's current position so the host doesn't depend on remotePositions timing.
+    const p = this.gameState.getPlayer();
+    if (p) this.onOnlineInteract?.(p.x, p.y, p.roomIndex);
   }
 
   checkInteractions(): void {
@@ -163,7 +163,8 @@ export class GameEngine {
     // interactionManager.guestMode=true blocks only handleSwitch from mutating state;
     // the host applies switch changes authoritatively via processGuestInteract.
     this.interactionManager.handlePlayerInteractions();
-    this.onOnlineInteract?.();
+    const p = this.gameState.getPlayer();
+    if (p) this.onOnlineInteract?.(p.x, p.y, p.roomIndex);
     this.onOnlineStateChanged?.();
   }
 

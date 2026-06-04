@@ -668,7 +668,7 @@ export class OnlineModeApplication {
             relay.sendMove(dx, dy);
             getPositionSender()?.sendNow();
         };
-        gameEngine.onOnlineInteract = () => relay.sendInteract();
+        gameEngine.onOnlineInteract = (x, y, roomIndex) => relay.sendInteract(x, y, roomIndex);
         gameEngine.enemyManager.onGuestAttack = (enemyId) => {
             const damage = gameEngine.prepareOnlineGuestAttack(enemyId);
             if (damage === null) return;
@@ -688,7 +688,12 @@ export class OnlineModeApplication {
             if (msg.action === 'attack' && msg.enemyId) {
                 gameEngine.processGuestAttackDamage(msg.enemyId, msg.damage);
             } else if (msg.action === 'interact') {
-                if (guestPos) gameEngine.processGuestInteract(guestPos.x, guestPos.y, guestPos.roomIndex);
+                const ix = msg.x ?? guestPos?.x;
+                const iy = msg.y ?? guestPos?.y;
+                const iRoom = msg.roomIndex ?? guestPos?.roomIndex;
+                if (ix !== undefined && iy !== undefined && iRoom !== undefined) {
+                    gameEngine.processGuestInteract(ix, iy, iRoom);
+                }
             } else if (msg.action === 'move' && msg.dx !== undefined && msg.dy !== undefined) {
                 if (guestPos) gameEngine.processGuestMove(guestPos.x, guestPos.y, guestPos.roomIndex, msg.dx, msg.dy);
             }

@@ -29,11 +29,14 @@ export class OnlineInputRelay {
         });
     }
 
-    sendInteract(): void {
+    sendInteract(x: number, y: number, roomIndex: number): void {
         this.client.send({
             type: 'player-input',
             playerId: this.playerId,
             action: 'interact',
+            x,
+            y,
+            roomIndex,
         });
     }
 }
