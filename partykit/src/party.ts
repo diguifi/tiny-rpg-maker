@@ -54,9 +54,14 @@ export default class GameParty implements Party.Server {
 
     onConnect(conn: Party.Connection): void {
         if (this.cancelled) {
-            conn.send(JSON.stringify({ type: 'server-closed' }));
-            conn.close();
-            return;
+            if (this.players.size === 0) {
+                // Room was cancelled but is now empty — revive it for the new player.
+                this.cancelled = false;
+            } else {
+                conn.send(JSON.stringify({ type: 'server-closed' }));
+                conn.close();
+                return;
+            }
         }
         // Send current player list so the newcomer can orient themselves
         conn.send(JSON.stringify({
@@ -120,9 +125,15 @@ export default class GameParty implements Party.Server {
             case 'lobby-cancelled': {
                 const player = this.players.get(sender.id);
                 if (player?.role === 'host') {
-                    this.cancelled = true;
                     this.gameStarted = false;
-                    this.party.broadcast(JSON.stringify({ type: 'server-closed' }), [sender.id]);
+                    const hasOtherPlayers = [...this.players.values()].some((p) => p.id !== sender.id);
+                    if (hasOtherPlayers) {
+                        // Other players are still connected — don't close the room.
+                        // onClose() will fire when the host disconnects and promote
+                        // the oldest remaining guest to host automatically.
+                    } else {
+                        this.cancelled = true;
+                    }
                 }
                 break;
             }
