@@ -204,7 +204,6 @@ export class OnlineModeApplication {
                 roomTracker.updatePlayer(msg.playerId, msg.roomIndex);
                 gameEngine.setOnlineActiveRooms(roomTracker.getOccupiedRooms());
                 updateEnemyAiRemotePlayers();
-                gameEngine.checkPressurePlatesForGuest(msg.x, msg.y, msg.roomIndex);
             }
             if (!existing || existing.roomIndex !== msg.roomIndex || existing.x !== msg.x || existing.y !== msg.y) {
                 if (manager.isHost) {

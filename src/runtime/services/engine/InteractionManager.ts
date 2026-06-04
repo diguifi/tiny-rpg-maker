@@ -114,6 +114,8 @@ class InteractionManager {
   gameState: GameStateApi;
   dialogManager: DialogManagerApi;
   options?: Options;
+  // When true, handleSwitch returns without mutating state (guest waits for host diff)
+  guestMode = false;
 
   constructor(gameState: GameStateApi, dialogManager: DialogManagerApi, options: Options = {}) {
     this.gameState = gameState;
@@ -347,6 +349,8 @@ class InteractionManager {
   handleSwitch(object: GameObjectState): boolean {
     const OT = this.types;
     if (object.type !== OT.SWITCH) return false;
+    // Guest: signal was already sent via onOnlineInteract; wait for host diff to apply state
+    if (this.guestMode) return true;
     const variableId = this.gameState.normalizeVariableId?.(object.variableId ?? null) ?? null;
     // If the variable is driven by a logic gate, the switch has no effect
     if (variableId && this.gameState.isLogicGateOutput?.(variableId)) {
@@ -518,37 +522,6 @@ class InteractionManager {
         this.gameState.setVariableValue?.(variableId, false);
       }
     }
-  }
-
-  checkPressurePlatesAt(player: PlayerPosition): boolean {
-    const OT = this.types;
-    const allObjects = this.gameState.getAllObjects?.() || [];
-    const pushBoxes = allObjects.filter((o) => o.type === OT.PUSH_BOX);
-    let changed = false;
-    for (const object of allObjects) {
-      if (object.type !== OT.PRESSURE_PLATE) continue;
-      const variableId = this.gameState.normalizeVariableId?.(object.variableId ?? null) ?? null;
-      if (!variableId) continue;
-      const playerOnPlate =
-        object.roomIndex === player.roomIndex &&
-        object.x === player.x &&
-        object.y === player.y;
-      const boxOnPlate = pushBoxes.some(
-        (box) => box.roomIndex === object.roomIndex && box.x === object.x && box.y === object.y
-      );
-      const isActivated = playerOnPlate || boxOnPlate;
-      const wasActivated = Boolean(object.activated);
-      if (isActivated && !wasActivated) {
-        object.activated = true;
-        this.gameState.setVariableValue?.(variableId, true);
-        changed = true;
-      } else if (!isActivated && wasActivated) {
-        object.activated = false;
-        this.gameState.setVariableValue?.(variableId, false);
-        changed = true;
-      }
-    }
-    return changed;
   }
 
   checkNpcs(npcs: NpcState[], player: PlayerPosition): void {

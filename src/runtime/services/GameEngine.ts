@@ -155,11 +155,10 @@ export class GameEngine {
   }
 
   checkInteractions(): void {
-    // Guests must not apply local state mutations (switch toggles, sounds) before
-    // the host confirms them. Only the signal is sent; the host is authoritative.
-    if (!this.isGuestMode()) {
-      this.interactionManager.handlePlayerInteractions();
-    }
+    // handlePlayerInteractions runs for all modes — items, NPCs, exits, traps are local.
+    // interactionManager.guestMode=true blocks only handleSwitch from mutating state;
+    // the host applies switch changes authoritatively via processGuestInteract.
+    this.interactionManager.handlePlayerInteractions();
     this.onOnlineInteract?.();
     this.onOnlineStateChanged?.();
   }
@@ -696,6 +695,7 @@ export class GameEngine {
 
   setOnlineMode(mode: OnlineMode): void {
     this.onlineMode = mode;
+    this.interactionManager.guestMode = mode === 'online-guest';
   }
 
   setOnlineActiveRooms(rooms: ReadonlySet<number> | null): void {
@@ -706,45 +706,24 @@ export class GameEngine {
     this.enemyManager.setRemotePlayers(players);
   }
 
-  checkPressurePlatesForGuest(x: number, y: number, roomIndex: number): void {
-    this.interactionManager.checkPressurePlates({ x, y, roomIndex });
+  checkPressurePlatesForGuest(guestX: number, guestY: number, guestRoomIndex: number): void {
+    this.interactionManager.checkPressurePlatesAt({ x: guestX, y: guestY, roomIndex: guestRoomIndex });
     this.onOnlineStateChanged?.();
   }
 
   processGuestMove(guestX: number, guestY: number, guestRoomIndex: number, dx: number, dy: number): void {
     this.movementManager.tryPushBoxForGuest(guestX, guestY, guestRoomIndex, dx, dy);
-    // Evaluate pressure plates for the guest's new position without clobbering
-    // the local player's activation state (handled by _evaluatePressurePlates).
-    this.interactionManager.checkPressurePlatesAt({ x: guestX, y: guestY, roomIndex: guestRoomIndex });
     this.onOnlineStateChanged?.();
-  }
-
-  checkPressurePlatesForGuest(guestX: number, guestY: number, guestRoomIndex: number): void {
-    // Snapshot activated states before checking so we only broadcast when something actually changed.
-    const objects = this.gameState.getAllObjects?.() ?? [];
-    const before = objects.map((o) => o.activated);
-    this.interactionManager.checkPressurePlates({ x: guestX, y: guestY, roomIndex: guestRoomIndex });
-    const changed = objects.some((o, i) => o.activated !== before[i]);
-    if (changed) {
-      this.onOnlineStateChanged?.();
-    }
   }
 
   processGuestInteract(guestX: number, guestY: number, guestRoomIndex: number): void {
     // Only process switch toggles on behalf of the Guest.
-    // Items, NPCs, traps, chests and exits must NOT run here — they have
-    // local side-effects (inventory, dialog, room transition) that belong
-    // to the player who actually triggered them, not the Host.
+    // Items, NPCs, traps, chests and exits must NOT run here.
     const triggered = this.interactionManager.handleSwitchInteractAt(guestX, guestY, guestRoomIndex);
     if (triggered) {
       this.renderer.draw();
       this.onOnlineStateChanged?.();
     }
-  }
-
-  checkPressurePlatesForGuest(guestX: number, guestY: number, guestRoomIndex: number): void {
-    const changed = this.interactionManager.checkPressurePlatesAt({ x: guestX, y: guestY, roomIndex: guestRoomIndex });
-    if (changed) this.onOnlineStateChanged?.();
   }
 
   processGuestAttack(enemyId: string): void {
