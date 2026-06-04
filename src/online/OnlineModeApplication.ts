@@ -505,8 +505,9 @@ export class OnlineModeApplication {
             manager.client.send({ type: 'item-picked', itemId, roomIndex, byPlayerId: manager.client.sessionToken });
         };
         gameEngine.onOnlineObjectTriggered = (objectId, roomIndex, newState) => {
-            // Only the host broadcasts object state — guests send input signals only
-            if (!manager.isHost) return;
+            // Guests can trigger chests and locked doors — byPlayerId lets the echo
+            // filter skip re-applying the sender's own message. Switches are safe
+            // because handleSwitch is a no-op in guestMode.
             manager.client.send({ type: 'object-triggered', objectId, roomIndex, newState, byPlayerId: manager.client.sessionToken });
         };
     }
@@ -527,12 +528,15 @@ export class OnlineModeApplication {
         });
         manager.client.on('item-picked', (msg) => {
             if (msg.byPlayerId === manager.client.sessionToken) return;
+            let found = false;
             const game = gameEngine.getGame() as { items?: Array<{ roomIndex: number; x: number; y: number; collected?: boolean }> };
             const item = game.items?.find((it) => `item-${it.roomIndex}-${it.x}-${it.y}` === msg.itemId);
-            if (item) {
-                item.collected = true;
-                gameEngine.renderer.draw();
-            }
+            if (item) { item.collected = true; found = true; }
+            // Also cover object-type collectibles (KEY, SWORD, ARMOR placed as objects)
+            const allObjs = gameEngine.gameState.getAllObjects?.() as Array<{ id?: string; roomIndex: number; x: number; y: number; collected?: boolean }> | undefined;
+            const obj = allObjs?.find((o) => (o.id ?? `obj-${o.roomIndex}-${o.x}-${o.y}`) === msg.itemId);
+            if (obj) { obj.collected = true; found = true; }
+            if (found) gameEngine.renderer.draw();
         });
         manager.client.on('object-triggered', (msg) => {
             // Ignore echoes of our own messages — prevents stale echoes from
