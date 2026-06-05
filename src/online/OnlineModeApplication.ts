@@ -312,6 +312,13 @@ export class OnlineModeApplication {
                 for (const targetId of pendingSnapshotTargets.splice(0)) {
                     manager.client.send({ type: 'full-state-snapshot', snapshot: broadcaster.buildSnapshot(), targetId });
                 }
+                // Broadcast the initial snapshot to every guest. The server only sends a
+                // snapshot-request for LATE joins / reconnects — never for the initial
+                // 2-player start — so without this the first guest never applies a
+                // snapshot, leaving OnlineStateSync gated (_snapshotApplied=false) and
+                // buffering every world-state-diff forever (plates/doors/enemies never
+                // sync). Mirrors onHostPromoted.
+                manager.client.send({ type: 'full-state-snapshot', snapshot: broadcaster.buildSnapshot() });
                 gameEngine.online.onStateChanged = () => broadcaster?.triggerNow();
                 gameEngine.online.onMove = () => positionSender?.sendNow();
             } else {
