@@ -121,7 +121,7 @@ export class OnlineCoordinator {
   // it or disconnected); the host restores the boxes to their origin and the change
   // propagates to the guest through the normal world-state broadcast.
   resetPushBoxesForRoom(roomIndex: number): void {
-    this.engine.gameState.resetPushBoxesForRoom?.(roomIndex);
+    this.engine.gameState.resetPushBoxesForRoom(roomIndex);
     this.notifyStateChanged();
   }
 
