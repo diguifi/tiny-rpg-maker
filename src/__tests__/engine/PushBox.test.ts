@@ -195,7 +195,7 @@ describe('PushBox — MovementManager', () => {
     expect(gameState.setPlayerPosition).toHaveBeenCalledWith(3, 2, null);
   });
 
-  it('guest mode: does not move the box locally nor advance the player (host-authoritative)', () => {
+  it('guest mode: predicts the push locally so the player follows the box (host reconciles)', () => {
     const box = { type: 'push-box', roomIndex: 0, x: 4, y: 3 };
     const gameState = createMovementGameState({
       getObjectAt: vi.fn((_, x, y) => (x === 4 && y === 3 ? box : null)),
@@ -205,11 +205,11 @@ describe('PushBox — MovementManager', () => {
 
     manager.tryMove(1, 0);
 
-    // Box untouched and player blocked — the move is only signalled to the host,
-    // which validates and broadcasts the box's new position back.
-    expect(box.x).toBe(4);
+    // Box and player both advance locally (client-side prediction); the host
+    // independently validates and broadcasts the authoritative box position.
+    expect(box.x).toBe(5);
     expect(box.y).toBe(3);
-    expect(gameState.setPlayerPosition).not.toHaveBeenCalled();
+    expect(gameState.setPlayerPosition).toHaveBeenCalledWith(4, 3, null);
   });
 
   it('guest mode: does not reset push boxes locally on room change (host-authoritative)', () => {

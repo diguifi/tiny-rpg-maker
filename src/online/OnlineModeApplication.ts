@@ -232,9 +232,10 @@ export class OnlineModeApplication {
                 roomTracker.updatePlayer(msg.playerId, msg.roomIndex);
                 gameEngine.online.setActiveRooms(roomTracker.getOccupiedRooms());
                 updateEnemyAiRemotePlayers();
-                // Guest left a room — if nobody remains in it, reset its push-boxes
-                // (host-authoritative; the reset broadcasts to the guest).
-                if (leftRoom !== null && !roomTracker.isOccupied(leftRoom)) {
+                // Guest left a room — reset its push-boxes (host-authoritative; the
+                // reset broadcasts to the guest). Mirrors the host's own room-exit
+                // reset in MovementManager so leaving always restores the puzzle.
+                if (leftRoom !== null) {
                     gameEngine.online.resetPushBoxesForRoom(leftRoom);
                 }
             }
@@ -259,8 +260,9 @@ export class OnlineModeApplication {
                 // Passing an impossible position (-1, -1, -1) guarantees playerOnPlate
                 // is false for every plate, so plates held only by the guest are released.
                 gameEngine.online.checkPressurePlatesForGuest(-1, -1, -1);
-                // Reset push-boxes in the room the guest left empty (host-authoritative).
-                if (leftRoom !== null && !roomTracker.isOccupied(leftRoom)) {
+                // Reset push-boxes in the room the disconnected guest was in
+                // (host-authoritative), mirroring the room-exit reset.
+                if (leftRoom !== null) {
                     gameEngine.online.resetPushBoxesForRoom(leftRoom);
                 }
             }

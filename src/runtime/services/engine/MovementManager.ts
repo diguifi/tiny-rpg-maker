@@ -344,14 +344,9 @@ class MovementManager {
     }
 
     if (objectAtTarget?.type === 'push-box') {
-      // Guest: never move the box locally. The move signal is still sent to the
-      // host (GameEngine.tryMove fires notifyMove after this returns); the host
-      // validates and broadcasts the box's new position. Block the player here so
-      // it doesn't overlap the box — it advances once the host's broadcast frees
-      // the tile.
-      if (this.guestMode) {
-        return;
-      }
+      // Guest predicts the push locally (client-side prediction) so it moves
+      // together with the box; the host independently validates the same move and
+      // broadcasts the authoritative box position, reconciling any divergence.
       const boxNewX = targetX + dx;
       const boxNewY = targetY + dy;
       if (!this.canPushBoxTo(targetRoomIndex, boxNewX, boxNewY, targetRoom)) {
