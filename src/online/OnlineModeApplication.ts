@@ -305,7 +305,13 @@ export class OnlineModeApplication {
                 this.applyGuestSpawn(gameEngine);
             }
 
-            playerList = new PlayerList(belowCanvas);
+            // Guard against re-creation: the server re-sends game-start on reconnect,
+            // takeover and late guest joins. Creating a new PlayerList each time would
+            // append a second HUD bar to belowCanvas (orphaning the old one), showing
+            // the same players twice ("four players" duplication). Reuse the existing one.
+            if (!playerList) {
+                playerList = new PlayerList(belowCanvas);
+            }
             playerList.update(manager.players, manager.client.sessionToken);
 
             const localIndex = manager.isHost ? 0 : 1;
