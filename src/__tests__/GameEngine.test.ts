@@ -100,6 +100,7 @@ type GameEngineApi = {
   handleGameCompletion: () => void;
   handleGameOverInteraction: () => void;
   resetGame: () => void;
+  online: { onRespawned: (() => void) | null };
   awaitingRestart: boolean;
   enemyManager: { stop: { mock: { calls: unknown[] } }; start: { mock: { calls: unknown[] } } };
   dialogManager: { lastMessage?: string };
@@ -304,6 +305,36 @@ describe('GameEngine business rules (legacy)', () => {
     engine.handleGameOverInteraction()
 
     expect(resetCalled).toBe(true)
+  })
+
+  it('notifies online respawn after a game-over restart (so the other player stops seeing a ghost)', () => {
+    const engine = createEngine()
+    engine.gameState.gameOver = true
+    engine.gameState.canResetAfterGameOver = true
+    engine.gameState.necromancerReady = false
+    engine.resetGame = () => {}
+
+    const onRespawned = vi.fn()
+    engine.online.onRespawned = onRespawned
+
+    engine.handleGameOverInteraction()
+
+    expect(onRespawned).toHaveBeenCalledTimes(1)
+  })
+
+  it('notifies online respawn after a necromancer revive', () => {
+    const engine = createEngine()
+    engine.gameState.gameOver = true
+    engine.gameState.canResetAfterGameOver = true
+    engine.gameState.necromancerReady = true
+    engine.gameState.reviveResult = true
+
+    const onRespawned = vi.fn()
+    engine.online.onRespawned = onRespawned
+
+    engine.handleGameOverInteraction()
+
+    expect(onRespawned).toHaveBeenCalledTimes(1)
   })
 
   it('shows dialog on level up choice and redraws', () => {

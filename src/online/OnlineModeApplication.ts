@@ -261,6 +261,23 @@ export class OnlineModeApplication {
         gameEngine.online.onPlayerDefeated = () => {
             manager.client.send({ type: 'player-died', playerId: manager.client.sessionToken });
         };
+        gameEngine.online.onRespawned = () => {
+            const p = gameEngine.gameState.getPlayer();
+            if (!p) return;
+            // Announce we're alive again so the other client clears alive=false and
+            // starts drawing us. player-position alone won't do it (the handler
+            // preserves the existing alive flag), so a restarted player would stay
+            // an invisible ghost without this.
+            manager.client.send({
+                type: 'player-respawned',
+                playerId: manager.client.sessionToken,
+                roomIndex: p.roomIndex,
+                x: p.x,
+                y: p.y,
+            });
+            positionSender?.start();
+            positionSender?.sendNow(true);
+        };
         gameEngine.online.onGameCompletion = () => {
             const name = sessionStorage.getItem('tiny-rpg-player-name') ?? 'Jogador';
             manager.client.send({ type: 'game-over', winnerId: manager.client.sessionToken, winnerName: name });

@@ -768,9 +768,14 @@ export class GameEngine {
         this.awaitingRestart = false;
         this.enemyManager.start();
         this.renderer.draw();
+        // Tell the other online player we're alive again (no-op in solo).
+        this.online.notifyRespawned();
         return;
       }
     }
     this.resetGame();
+    // Tell the other online player we're alive again so they stop rendering us
+    // as a dead/invisible ghost (no-op in solo).
+    this.online.notifyRespawned();
   }
 }

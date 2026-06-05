@@ -31,6 +31,7 @@ export class OnlineCoordinator {
   onItemPicked: ((itemId: string, roomIndex: number) => void) | null = null;
   onObjectTriggered: ((objectId: string, roomIndex: number, newState: boolean) => void) | null = null;
   onStateChanged: (() => void) | null = null;
+  onRespawned: (() => void) | null = null;
 
   constructor(engine: GameEngine) {
     this.engine = engine;
@@ -84,6 +85,13 @@ export class OnlineCoordinator {
 
   notifyPlayerDefeated(): void {
     this.onPlayerDefeated?.();
+  }
+
+  // Fired when the local player comes back to life after a game-over restart/revive.
+  // The online layer uses it to tell the other client (player-respawned) so the
+  // restarted player is no longer rendered as a dead/invisible ghost.
+  notifyRespawned(): void {
+    this.onRespawned?.();
   }
 
   notifyGameCompletion(): void {
