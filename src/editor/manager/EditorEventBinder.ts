@@ -324,7 +324,11 @@ class EditorEventBinder extends EditorManagerModule {
 
         if (editorCanvas) {
             editorCanvas.addEventListener('pointerdown', (ev: PointerEvent) => tileService.startPaint(ev));
-            editorCanvas.addEventListener('pointermove', (ev: PointerEvent) => tileService.continuePaint(ev));
+            editorCanvas.addEventListener('pointermove', (ev: PointerEvent) => {
+                tileService.continuePaint(ev);
+                tileService.updateHover(ev);
+            });
+            editorCanvas.addEventListener('pointerleave', () => tileService.clearHover());
         }
 
         if (Array.isArray(mobileNavButtons)) {

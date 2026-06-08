@@ -192,6 +192,8 @@ function makeManager() {
         startPaint: vi.fn(),
         continuePaint: vi.fn(),
         finishPaint: vi.fn(),
+        updateHover: vi.fn(),
+        clearHover: vi.fn(),
     };
 
     const worldService = {
@@ -725,11 +727,18 @@ describe('EditorEventBinder', () => {
     });
 
     // 31. editorCanvas pointermove
-    it('editorCanvas pointermove calls tileService.continuePaint with pointer event', () => {
+    it('editorCanvas pointermove calls tileService.continuePaint and updateHover', () => {
         const pev = new Event('pointermove', { bubbles: true });
         dom.editorCanvas.dispatchEvent(pev);
         expect(tileService.continuePaint).toHaveBeenCalledTimes(1);
         expect(tileService.continuePaint).toHaveBeenCalledWith(pev);
+        expect(tileService.updateHover).toHaveBeenCalledTimes(1);
+        expect(tileService.updateHover).toHaveBeenCalledWith(pev);
+    });
+
+    it('editorCanvas pointerleave calls tileService.clearHover', () => {
+        dom.editorCanvas.dispatchEvent(new Event('pointerleave', { bubbles: true }));
+        expect(tileService.clearHover).toHaveBeenCalledTimes(1);
     });
 
     // 32. globalThis pointerup

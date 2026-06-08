@@ -1,8 +1,12 @@
 
 import type { EditorManager } from '../EditorManager';
 
+type TileCoord = { x: number; y: number };
+
 class EditorTileService {
     manager: EditorManager;
+    private hoverHighlight: HTMLElement | null = null;
+    private hoverCursorActive = false;
 
     constructor(editorManager: EditorManager) {
         this.manager = editorManager;
@@ -21,6 +25,8 @@ class EditorTileService {
         if (!canvas) return;
         ev.preventDefault();
 
+        this.clearHover();
+
         if (this.tryOpenObjectModal(ev)) return;
 
         this.state.mapPainting = true;
@@ -29,40 +35,110 @@ class EditorTileService {
     }
 
     private tryOpenObjectModal(ev: PointerEvent): boolean {
-        if (this.state.placingNpc || this.state.placingEnemy || this.state.placingObjectType) return false;
+        if (this.isPlacing()) return false;
 
         const coord = this.getTileFromEvent(ev);
         if (!coord) return false;
 
-        // Check for placed object
-        const objects = (this.manager.gameEngine.getObjectsForRoom(this.state.activeRoomIndex) || []) as Array<{ id?: string; x: number; y: number }>;
+        const entity = this.findEntityAt(coord);
+        if (!entity) return false;
+
+        entity.open();
+        return true;
+    }
+
+    /** Locates a placed object/NPC/enemy on the given tile of the active room. */
+    private findEntityAt(coord: TileCoord): { open: () => void } | null {
+        const roomIndex = this.state.activeRoomIndex;
+
+        const objects = (this.manager.gameEngine.getObjectsForRoom(roomIndex) || []) as Array<{ id?: string; x: number; y: number }>;
         const foundObject = objects.find((o) => o.x === coord.x && o.y === coord.y);
         if (foundObject?.id) {
-            this.manager.objectEditModal.open(foundObject.id);
-            return true;
+            const id = foundObject.id;
+            return { open: () => this.manager.objectEditModal.open(id) };
         }
 
-        // Check for placed NPC
         const sprites = (this.manager.gameEngine.getSprites() || []) as Array<{ id?: string; x?: number; y?: number; roomIndex?: number; placed?: boolean }>;
         const foundNpc = sprites.find((s) =>
-            s.placed && s.roomIndex === this.state.activeRoomIndex && s.x === coord.x && s.y === coord.y
+            s.placed && s.roomIndex === roomIndex && s.x === coord.x && s.y === coord.y
         );
         if (foundNpc?.id) {
-            this.manager.npcEditModal.open(foundNpc.id);
-            return true;
+            const id = foundNpc.id;
+            return { open: () => this.manager.npcEditModal.open(id) };
         }
 
-        // Check for placed enemy
         const enemies = (this.manager.gameEngine.getActiveEnemies() || []) as Array<{ id?: string; x?: number; y?: number; roomIndex?: number }>;
         const foundEnemy = enemies.find((e) =>
-            e.roomIndex === this.state.activeRoomIndex && e.x === coord.x && e.y === coord.y
+            e.roomIndex === roomIndex && e.x === coord.x && e.y === coord.y
         );
         if (foundEnemy?.id) {
-            this.manager.enemyEditModal.open(foundEnemy.id);
-            return true;
+            const id = foundEnemy.id;
+            return { open: () => this.manager.enemyEditModal.open(id) };
         }
 
-        return false;
+        return null;
+    }
+
+    private isPlacing(): boolean {
+        return Boolean(this.state.placingNpc || this.state.placingEnemy || this.state.placingObjectType);
+    }
+
+    /**
+     * Highlights the hovered tile and shows a pointer cursor when it holds a
+     * placed entity, signalling that clicking it opens its edit modal.
+     */
+    updateHover(ev: PointerEvent) {
+        if (this.state.mapPainting || this.isPlacing()) {
+            this.clearHover();
+            return;
+        }
+        const coord = this.getTileFromEvent(ev);
+        const entity = coord ? this.findEntityAt(coord) : null;
+        if (!coord || !entity) {
+            this.clearHover();
+            return;
+        }
+        this.showHover(coord);
+    }
+
+    private showHover(coord: TileCoord) {
+        const canvas = this.dom.editorCanvas;
+        if (!canvas) return;
+
+        const highlight = this.getHoverHighlight();
+        if (highlight) {
+            const size = canvas.offsetWidth || canvas.clientWidth || 0;
+            const tile = size / 8;
+            highlight.style.width = `${tile}px`;
+            highlight.style.height = `${tile}px`;
+            highlight.style.left = `${canvas.offsetLeft + coord.x * tile}px`;
+            highlight.style.top = `${canvas.offsetTop + coord.y * tile}px`;
+            highlight.hidden = false;
+        }
+
+        canvas.style.cursor = 'pointer';
+        this.hoverCursorActive = true;
+    }
+
+    clearHover() {
+        if (this.hoverHighlight) this.hoverHighlight.hidden = true;
+        if (this.hoverCursorActive) {
+            const canvas = this.dom.editorCanvas;
+            if (canvas) canvas.style.cursor = '';
+            this.hoverCursorActive = false;
+        }
+    }
+
+    private getHoverHighlight(): HTMLElement | null {
+        if (this.hoverHighlight) return this.hoverHighlight;
+        const wrapper = this.dom.editorCanvas?.parentElement;
+        if (!wrapper) return null;
+        const el = document.createElement('div');
+        el.className = 'editor-hover-highlight';
+        el.hidden = true;
+        wrapper.appendChild(el);
+        this.hoverHighlight = el;
+        return el;
     }
 
     continuePaint(ev: PointerEvent) {

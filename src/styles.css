@@ -748,6 +748,22 @@ body.editor-mode .editor-mobile-nav-button:focus-visible {
     max-width: 900px;
 }
 
+/* Hover affordance: signals that a placed object/NPC/enemy is clickable. */
+.editor-hover-highlight {
+    position: absolute;
+    pointer-events: none;
+    box-sizing: border-box;
+    border: 2px solid var(--accent);
+    border-radius: 4px;
+    box-shadow: 0 0 0 2px rgba(91, 250, 142, 0.25), inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+    z-index: 5;
+    transition: left 0.06s ease-out, top 0.06s ease-out;
+}
+
+.editor-hover-highlight[hidden] {
+    display: none;
+}
+
 .editor-map-title {
     display: flex;
     align-items: baseline;
@@ -3201,7 +3217,7 @@ body.game-mode .tab-button.active {
     background: var(--panel);
     color: var(--text);
     cursor: pointer;
-    font-size: 0.8em;
+    font-size: var(--engine-font-size);
     transition: border-color 0.2s ease, background 0.2s ease;
 }
 
@@ -3830,6 +3846,19 @@ body.game-mode .tab-button.active {
     margin: 0;
     color: rgba(255, 255, 255, 0.38);
     line-height: 1.45;
+}
+
+.editor-modal__badge {
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    padding: 1px 6px;
+    border-radius: 3px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: rgba(91, 250, 142, 0.1);
+    border: 1px solid rgba(91, 250, 142, 0.25);
 }
 
 .object-edit-modal__close {

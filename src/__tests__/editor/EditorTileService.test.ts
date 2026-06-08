@@ -268,6 +268,61 @@ describe('EditorTileService', () => {
     expect(mgr.enemyEditModal.open).not.toHaveBeenCalled();
     expect(mgr.state.mapPainting).toBe(true);
   });
+
+  // ─── hover affordance ─────────────────────────────────────────────────────────
+
+  it('updateHover sets a pointer cursor when hovering a placed entity', () => {
+    const mgr = makeManager();
+    mgr.gameEngine.getActiveEnemies = vi.fn(() => [{ id: 'enemy-7', roomIndex: 0, x: 4, y: 4 }]);
+    const svc = new EditorTileService(asTileServiceManager(mgr));
+    svc.updateHover(makePointer(80, 80));
+    expect(mgr.domCache.editorCanvas.style.cursor).toBe('pointer');
+  });
+
+  it('updateHover clears the cursor over an empty tile', () => {
+    const mgr = makeManager();
+    mgr.gameEngine.getActiveEnemies = vi.fn(() => [{ id: 'enemy-7', roomIndex: 0, x: 4, y: 4 }]);
+    const svc = new EditorTileService(asTileServiceManager(mgr));
+    svc.updateHover(makePointer(80, 80));
+    expect(mgr.domCache.editorCanvas.style.cursor).toBe('pointer');
+    // Move onto a tile with no entity → affordance is removed.
+    mgr.gameEngine.getActiveEnemies = vi.fn(() => []);
+    svc.updateHover(makePointer(80, 80));
+    expect(mgr.domCache.editorCanvas.style.cursor).toBe('');
+  });
+
+  it('updateHover shows no affordance while in placing mode', () => {
+    const mgr = makeManager({ placingEnemy: true });
+    mgr.gameEngine.getActiveEnemies = vi.fn(() => [{ id: 'enemy-7', roomIndex: 0, x: 4, y: 4 }]);
+    const svc = new EditorTileService(asTileServiceManager(mgr));
+    svc.updateHover(makePointer(80, 80));
+    expect(mgr.domCache.editorCanvas.style.cursor).not.toBe('pointer');
+  });
+
+  it('updateHover renders a highlight element over the hovered entity', () => {
+    const mgr = makeManager();
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(mgr.domCache.editorCanvas);
+    mgr.gameEngine.getActiveEnemies = vi.fn(() => [{ id: 'enemy-7', roomIndex: 0, x: 4, y: 4 }]);
+    const svc = new EditorTileService(asTileServiceManager(mgr));
+    svc.updateHover(makePointer(80, 80));
+    const highlight = wrapper.querySelector('.editor-hover-highlight') as HTMLElement | null;
+    expect(highlight).not.toBeNull();
+    expect(highlight?.hidden).toBe(false);
+  });
+
+  it('clearHover hides the highlight and resets the cursor', () => {
+    const mgr = makeManager();
+    const wrapper = document.createElement('div');
+    wrapper.appendChild(mgr.domCache.editorCanvas);
+    mgr.gameEngine.getActiveEnemies = vi.fn(() => [{ id: 'enemy-7', roomIndex: 0, x: 4, y: 4 }]);
+    const svc = new EditorTileService(asTileServiceManager(mgr));
+    svc.updateHover(makePointer(80, 80));
+    svc.clearHover();
+    const highlight = wrapper.querySelector('.editor-hover-highlight') as HTMLElement | null;
+    expect(highlight?.hidden).toBe(true);
+    expect(mgr.domCache.editorCanvas.style.cursor).toBe('');
+  });
 });
 
 

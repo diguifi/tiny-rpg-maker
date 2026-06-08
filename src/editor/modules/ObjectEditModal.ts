@@ -2,9 +2,11 @@
 import { EditorRendererBase } from './renderers/EditorRendererBase';
 import { EditorConstants } from './EditorConstants';
 import { ITEM_TYPES } from '../../runtime/domain/constants/itemTypes';
+import { ItemDefinitions } from '../../runtime/domain/definitions/ItemDefinitions';
 import { EditorModal } from './EditorModal';
 import type { EditorModalButton } from './EditorModal';
 import type { EditorRenderService } from './EditorRenderService';
+import type { ItemType } from '../../runtime/domain/constants/itemTypes';
 
 type ObjectDefinitionView = {
     type: string;
@@ -21,6 +23,8 @@ type EditorObject = {
 };
 
 class ObjectEditModal extends EditorRendererBase {
+    private static readonly CATEGORY_TAGS = ['markers', 'equipment', 'consumables', 'obstacles', 'triggers', 'logic'];
+
     private currentObjectId: string | null = null;
     private readonly modal: EditorModal;
 
@@ -43,6 +47,7 @@ class ObjectEditModal extends EditorRendererBase {
             header: {
                 title: this.service.objectRenderer.getObjectLabel(object.type, definitions),
                 subtitle: `(${object.x}, ${object.y})`,
+                badge: this.getCategoryLabel(object.type),
                 description: descKey ? this.t(descKey) : '',
                 drawPreview: (canvas) => this.service.objectRenderer.drawObjectPreview(canvas, object.type),
             },
@@ -101,6 +106,14 @@ class ObjectEditModal extends EditorRendererBase {
         }
 
         return buttons;
+    }
+
+    /** Resolves the localized category label (markers, equipment, ...) from the item's tags. */
+    private getCategoryLabel(type: string): string {
+        const itemDef = ItemDefinitions.getItemDefinition(type as ItemType);
+        if (!itemDef) return '';
+        const category = ObjectEditModal.CATEGORY_TAGS.find((tag) => itemDef.hasTag(tag));
+        return category ? this.t(`objects.category.${category}`, '') : '';
     }
 
     private getDescriptionKey(type: string): string {

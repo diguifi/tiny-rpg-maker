@@ -9,8 +9,10 @@ interface EditorModalButton {
 
 interface EditorModalHeader {
     title: string;
-    /** Optional badge shown next to the title (e.g. the "(x, y)" position). */
+    /** Optional neutral chip shown below the title (e.g. the "(x, y)" position). */
     subtitle?: string | null;
+    /** Optional accent chip shown below the title (e.g. a category tag). */
+    badge?: string | null;
     /** Optional descriptive paragraph below the title. */
     description?: string | null;
     /** Hook to paint the 48x48 preview canvas. When omitted, no preview is shown. */
@@ -130,6 +132,13 @@ class EditorModal {
         subtitle.className = 'object-position';
         subtitle.textContent = header.subtitle ?? '';
         titleGroup.appendChild(subtitle);
+
+        if (header.badge) {
+            const badge = document.createElement('span');
+            badge.className = 'editor-modal__badge';
+            badge.textContent = header.badge;
+            titleGroup.appendChild(badge);
+        }
 
         if (header.description) {
             const desc = document.createElement('p');
