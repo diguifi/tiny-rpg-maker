@@ -20,3 +20,11 @@ Notes:
 
 TODO:
 - Manual two-client online playtest is still useful to validate PartyKit behavior end to end with Host and Guest tabs.
+
+2026-06-11 sword/level-up investigation:
+- User report: sometimes the sword disappears when leveling up.
+- Skeptical finding: `swordType` is not cleared by XP level-up or room movement in state; the reproducible symptom is visual. `Renderer.draw()` skips HUD/inventory while `levelUpOverlayActive` is true, which happens only on level-ups that open the skill picker.
+- Added a failing reproduction test in `src/__tests__/renderer/Renderer.test.ts`: "keeps the HUD inventory visible after leveling up with a sword equipped".
+- Verification: `npm run test:run -- src/__tests__/renderer/Renderer.test.ts` fails because `renderer.hudRenderer.drawInventory` is not called during the level-up skill picker.
+- Fixed in `src/runtime/adapters/Renderer.ts`: when the level-up skill picker is active, the inventory bar is redrawn after the full-screen overlay so the equipped sword remains visible.
+- Verification after fix: `npm run test:run -- src/__tests__/renderer/Renderer.test.ts` passes.
