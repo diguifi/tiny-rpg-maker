@@ -1,0 +1,12 @@
+{
+  "name": "tiny-rpg-logic-puzzle",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Logic-gate puzzle example for tiny-rpg-studio-sdk",
+  "scripts": {
+    "start": "node logic-puzzle.mjs"
+  },
+  "dependencies": {
+    "tiny-rpg-studio-sdk": "file:../.."
+  }
+}
