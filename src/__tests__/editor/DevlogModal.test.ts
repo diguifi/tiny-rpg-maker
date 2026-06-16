@@ -67,7 +67,7 @@ describe('DevlogModal', () => {
     const entries = makeEntries(3);
     const modal = new DevlogModal(entries);
 
-    document.getElementById('btn-devlog')!.click();
+    (document.getElementById('btn-devlog') as HTMLElement).click();
 
     const modalEl = document.getElementById('devlog-modal') as HTMLElement;
     const list = document.getElementById('devlog-list') as HTMLElement;
@@ -90,7 +90,7 @@ describe('DevlogModal', () => {
     const next = document.getElementById('devlog-next') as HTMLButtonElement;
     const indicator = document.getElementById('devlog-page-indicator') as HTMLElement;
 
-    document.getElementById('btn-devlog')!.click();
+    (document.getElementById('btn-devlog') as HTMLElement).click();
 
     expect(list.querySelectorAll('.devlog-entry').length).toBe(5);
     expect(indicator.textContent).toBe('Page 1 of 3');
@@ -116,13 +116,13 @@ describe('DevlogModal', () => {
     const modal = new DevlogModal(makeEntries(3));
     const modalEl = document.getElementById('devlog-modal') as HTMLElement;
 
-    document.getElementById('btn-devlog')!.click();
+    (document.getElementById('btn-devlog') as HTMLElement).click();
     expect(modalEl.hidden).toBe(false);
 
-    document.getElementById('devlog-close')!.click();
+    (document.getElementById('devlog-close') as HTMLElement).click();
     expect(modalEl.hidden).toBe(true);
 
-    document.getElementById('btn-devlog')!.click();
+    (document.getElementById('btn-devlog') as HTMLElement).click();
     expect(modalEl.hidden).toBe(false);
     document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
     expect(modalEl.hidden).toBe(true);
