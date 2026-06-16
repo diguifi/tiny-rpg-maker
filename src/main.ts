@@ -3,6 +3,7 @@ import { applyFontConfig } from './config/FontConfig';
 import { EditorManager } from './editor/EditorManager';
 import { EditorExportService } from './editor/modules/EditorExportService';
 import { ExploreModal } from './editor/modules/ExploreModal';
+import { DevlogModal } from './editor/modules/DevlogModal';
 import { OnlineModeApplication } from './online/OnlineModeApplication';
 import { GameEngine } from './runtime/services/GameEngine';
 import { ShareUtils } from './runtime/infra/share/ShareUtils';
@@ -84,6 +85,7 @@ class TinyRPGApplication {
     }
     new EditorExportService();
     new ExploreModal();
+    new DevlogModal();
     this.bindResetButton(gameEngine);
     this.bindTouchPad(gameEngine);
     this.bindFullscreenButton();

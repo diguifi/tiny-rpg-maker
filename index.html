@@ -127,6 +127,7 @@
                         <div id="history-items-container" class="history-items-container"></div>
                     </div>
                 </div>
+                <button id="btn-devlog" class="btn-devlog" type="button" title="Engine updates" aria-label="Engine updates and devlog" aria-haspopup="dialog">Updates<span id="devlog-badge" class="devlog-badge" aria-hidden="true" hidden></span></button>
             </div>
 
             <div class="tab-content active" id="tab-game" role="tabpanel" aria-labelledby="tab-game">
@@ -616,6 +617,24 @@
                 </div>
                 <p id="explore-empty" class="explore-empty" hidden data-text-key="explore.empty">Nenhum jogo disponível ainda.</p>
                 <div id="explore-grid" class="explore-grid" role="list"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="devlog-modal" class="devlog-modal" hidden role="dialog" aria-modal="true" aria-labelledby="devlog-modal-title">
+        <div class="devlog-modal__panel">
+            <div class="devlog-modal__header">
+                <div class="devlog-modal__title-group">
+                    <h2 id="devlog-modal-title" class="devlog-modal__title">What's New</h2>
+                    <p class="devlog-modal__subtitle">Engine updates &amp; devlog</p>
+                </div>
+                <button type="button" id="devlog-close" class="devlog-modal__close" aria-label="Close updates">✕</button>
+            </div>
+            <div id="devlog-list" class="devlog-modal__body"></div>
+            <div class="devlog-modal__footer">
+                <button type="button" id="devlog-prev" class="devlog-pager-btn">← Prev</button>
+                <span id="devlog-page-indicator" class="devlog-page-indicator" aria-live="polite"></span>
+                <button type="button" id="devlog-next" class="devlog-pager-btn">Next →</button>
             </div>
         </div>
     </div>

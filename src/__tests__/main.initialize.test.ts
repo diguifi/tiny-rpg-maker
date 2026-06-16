@@ -73,6 +73,10 @@ vi.mock('../editor/modules/ExploreModal', () => ({
   ExploreModal: vi.fn(),
 }));
 
+vi.mock('../editor/modules/DevlogModal', () => ({
+  DevlogModal: vi.fn(),
+}));
+
 vi.mock('../runtime/adapters/TextResources', () => ({
   TextResources: {
     get: (...args: [string | null | undefined, string?]) => mocks.textGet(...args),

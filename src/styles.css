@@ -229,7 +229,8 @@ body.game-mode .tabs {
     }
 
     .btn-manual-save,
-    .btn-history-dropdown {
+    .btn-history-dropdown,
+    .btn-devlog {
         padding: 4px 7px;
         min-height: 26px;
     }
@@ -271,7 +272,8 @@ body.online-mode .project-save-controls {
 }
 
 .btn-manual-save,
-.btn-history-dropdown {
+.btn-history-dropdown,
+.btn-devlog {
     padding: 8px 12px;
     background: rgba(26, 32, 48, 0.9);
     border: 4px solid var(--border);
@@ -285,16 +287,56 @@ body.online-mode .project-save-controls {
 
 @media (hover: hover) {
     .btn-manual-save:hover,
-    .btn-history-dropdown:hover {
+    .btn-history-dropdown:hover,
+    .btn-devlog:hover {
         background: rgba(100, 181, 246, 0.2);
         border-color: rgba(100, 181, 246, 0.45);
     }
 }
 
 .btn-manual-save:focus-visible,
-.btn-history-dropdown:focus-visible {
+.btn-history-dropdown:focus-visible,
+.btn-devlog:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
+}
+
+/* Updates button — badge anchor + "new updates" affordance */
+.btn-devlog {
+    position: relative;
+}
+
+.btn-devlog.has-updates {
+    border-color: var(--accent);
+}
+
+.devlog-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 12px;
+    height: 12px;
+    background: var(--accent);
+    border: 2px solid var(--bg);
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px var(--accent);
+    pointer-events: none;
+    animation: devlog-badge-pulse 1.6s ease-in-out infinite;
+}
+
+.devlog-badge[hidden] {
+    display: none;
+}
+
+@keyframes devlog-badge-pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.25); opacity: 0.7; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .devlog-badge {
+        animation: none;
+    }
 }
 
 .btn-manual-save:disabled {
@@ -4739,6 +4781,172 @@ body.game-mode .tab-button.active {
 @media (max-width: 380px) {
     .explore-grid {
         grid-template-columns: 1fr;
+    }
+}
+
+/* ── Devlog ("What's New") modal ─────────────────────────────── */
+.devlog-modal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.88);
+    z-index: 1000;
+    padding: 16px;
+}
+
+.devlog-modal[hidden] {
+    display: none;
+}
+
+.devlog-modal__panel {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 560px;
+    max-height: 85vh;
+    background: var(--panel);
+    border: 2px solid var(--accent);
+    overflow: hidden;
+}
+
+.devlog-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 2px solid var(--border);
+    flex-shrink: 0;
+    gap: 12px;
+}
+
+.devlog-modal__title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.devlog-modal__title {
+    color: var(--accent);
+    margin: 0;
+}
+
+.devlog-modal__subtitle {
+    margin: 0;
+    color: var(--muted);
+    opacity: 0.55;
+    font-size: 0.85em;
+    line-height: var(--lh-text);
+}
+
+.devlog-modal__close {
+    background: none;
+    border: none;
+    color: var(--text);
+    cursor: pointer;
+    font-family: var(--ui-font-family);
+    line-height: var(--lh-tight);
+    padding: 4px 8px;
+    opacity: 0.7;
+    flex-shrink: 0;
+}
+
+.devlog-modal__close:hover,
+.devlog-modal__close:focus {
+    opacity: 1;
+    color: var(--accent);
+    outline: none;
+}
+
+.devlog-modal__body {
+    overflow-y: auto;
+    padding: 16px;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.devlog-entry {
+    background: var(--bg);
+    border: 2px solid var(--border);
+    border-left: 4px solid var(--accent);
+    padding: 12px 14px;
+}
+
+.devlog-entry__date {
+    color: var(--accent);
+    font-size: 0.8em;
+    opacity: 0.85;
+    margin-bottom: 4px;
+}
+
+.devlog-entry__title {
+    margin: 0 0 6px;
+    color: var(--text);
+    font-size: 1em;
+}
+
+.devlog-entry__desc {
+    margin: 0;
+    color: var(--text);
+    opacity: 0.85;
+    line-height: var(--lh-text);
+    font-size: 0.9em;
+}
+
+.devlog-modal__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 16px;
+    border-top: 2px solid var(--border);
+    flex-shrink: 0;
+}
+
+.devlog-pager-btn {
+    padding: 6px 12px;
+    background: rgba(26, 32, 48, 0.9);
+    border: 2px solid var(--border);
+    color: var(--text);
+    cursor: pointer;
+    font-family: var(--ui-font-family);
+    font-weight: var(--fw-medium);
+    transition: all 0.2s;
+}
+
+@media (hover: hover) {
+    .devlog-pager-btn:hover:not(:disabled) {
+        background: rgba(100, 181, 246, 0.2);
+        border-color: rgba(100, 181, 246, 0.45);
+    }
+}
+
+.devlog-pager-btn:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.devlog-pager-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.devlog-page-indicator {
+    color: var(--muted);
+    opacity: 0.7;
+    font-size: 0.85em;
+    text-align: center;
+    flex: 1;
+}
+
+@media (max-width: 640px) {
+    .devlog-modal__panel {
+        max-height: 90vh;
     }
 }
 
