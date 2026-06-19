@@ -2,6 +2,8 @@ import type { ChatEntry } from '../shared/protocol';
 import type { OnlineClient } from '../client/OnlineClient';
 
 const MAX_LOCAL_MESSAGES = 30;
+// Keep in sync with the server (partykit/src/party.ts MAX_CHAT_MESSAGE_LENGTH).
+const MAX_CHAT_MESSAGE_LENGTH = 180;
 
 export class ChatPanel {
     private client: OnlineClient;
@@ -115,7 +117,7 @@ export class ChatPanel {
     }
 
     private sendCurrentMessage(): void {
-        const text = this.input.value.trim();
+        const text = this.normalizeText(this.input.value);
         if (!text) return;
         if (!this.client.isConnected) {
             this.input.style.borderColor = '#ff4d4d';
@@ -127,6 +129,9 @@ export class ChatPanel {
             message: { id: '', playerId: this.client.sessionToken, playerName: '', text, sentAt: Date.now() },
         });
         this.input.value = '';
+        // Keep focus so the user can type the next message right away (and the
+        // mobile keyboard stays open) without re-tapping the field.
+        this.input.focus();
         // Optimistic update — show immediately without waiting for server echo
         this.addMessage({
             id: `local-${Date.now()}`,
@@ -137,17 +142,24 @@ export class ChatPanel {
         });
     }
 
+    // Normalize identically to the server so the optimistic entry and its
+    // authoritative echo carry byte-identical text. The server collapses runs of
+    // whitespace and clamps the length; if we skipped that here, a message with
+    // double spaces would fail the dedup text match and appear twice.
+    private normalizeText(raw: string): string {
+        return raw.trim().replace(/\s+/g, ' ').slice(0, MAX_CHAT_MESSAGE_LENGTH);
+    }
+
     private addMessage(message: ChatEntry): void {
-        // Deduplicate: if the server echo matches a locally-optimistic message
-        // (same sender, same text, within 5 s), replace it with the authoritative entry.
+        // Deduplicate: when the server echoes back our own message, replace the
+        // optimistic local entry instead of appending a second copy. Match on
+        // sender + text only and take the oldest pending local entry (FIFO) —
+        // NOT on timestamp: the echo's sentAt comes from the server clock while
+        // the optimistic entry uses the client clock, so any skew between the two
+        // would defeat a time-based match and let the duplicate through.
         const isOwnEcho = message.playerId === this.client.sessionToken && message.id !== '' && !message.id.startsWith('local-');
         if (isOwnEcho) {
-            const idx = this.messages.reduceRight((found: number, m: ChatEntry, i: number) =>
-                found === -1
-                && m.id.startsWith('local-')
-                && m.text === message.text
-                && Math.abs(message.sentAt - m.sentAt) < 5000
-                    ? i : found, -1);
+            const idx = this.messages.findIndex((m) => m.id.startsWith('local-') && m.text === message.text);
             if (idx >= 0) {
                 this.messages = [...this.messages.slice(0, idx), message, ...this.messages.slice(idx + 1)];
                 this.renderMessages();
