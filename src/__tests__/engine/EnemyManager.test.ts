@@ -1549,6 +1549,58 @@ describe('EnemyManager', () => {
       vi.useRealTimers();
     });
   });
+
+  describe('Remote-player attack range re-check (online)', () => {
+    const setupRemoteAttack = () => {
+      const enemies = [{ id: 'enemy-test', type: 'rat', roomIndex: 0, x: 3, y: 4, lastX: 3, lives: 1 }];
+      const gameState = createEnemyGameState({
+        getEnemies: vi.fn(() => enemies as never),
+        getPlayer: vi.fn(() => ({ roomIndex: 0, x: 9, y: 9, lastX: 9 })), // local player far away
+      });
+      const manager = new EnemyManager(gameState, renderer, tileManager);
+      const attackSpy = vi.fn();
+      manager.onEnemyAttackedRemotePlayer = attackSpy;
+      // Remote player adjacent to the enemy — this is what triggers the wind-up.
+      manager.setRemotePlayers([{ id: 'guest', x: 3, y: 4, roomIndex: 0, alive: true }]);
+      return { manager, attackSpy };
+    };
+
+    it('still damages a remote player that stays in melee range through the wind-up', () => {
+      vi.useFakeTimers();
+      const { manager, attackSpy } = setupRemoteAttack();
+
+      manager.resolvePostMove(0, 3, 4, 0);
+      vi.advanceTimersByTime(GameConfig.combat.lungeAnimationDuration);
+
+      expect(attackSpy).toHaveBeenCalledWith('guest', 1);
+      vi.useRealTimers();
+    });
+
+    it('does not damage a remote player who escapes melee range during the wind-up', () => {
+      vi.useFakeTimers();
+      const { manager, attackSpy } = setupRemoteAttack();
+
+      manager.resolvePostMove(0, 3, 4, 0);
+      // Guest runs away before the wind-up resolves.
+      manager.setRemotePlayers([{ id: 'guest', x: 3, y: 9, roomIndex: 0, alive: true }]);
+      vi.advanceTimersByTime(GameConfig.combat.lungeAnimationDuration);
+
+      expect(attackSpy).not.toHaveBeenCalled();
+      vi.useRealTimers();
+    });
+
+    it('does not damage a remote player who left the room during the wind-up', () => {
+      vi.useFakeTimers();
+      const { manager, attackSpy } = setupRemoteAttack();
+
+      manager.resolvePostMove(0, 3, 4, 0);
+      manager.setRemotePlayers([{ id: 'guest', x: 3, y: 4, roomIndex: 1, alive: true }]);
+      vi.advanceTimersByTime(GameConfig.combat.lungeAnimationDuration);
+
+      expect(attackSpy).not.toHaveBeenCalled();
+      vi.useRealTimers();
+    });
+  });
 });
 
 type GlobalWithCrypto = typeof globalThis & {

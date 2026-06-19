@@ -270,6 +270,10 @@ export class OnlineModeApplication {
 
         this.bindGameEngineOutboundEvents(gameEngine, manager);
         this.bindSharedWorldEvents(gameEngine, manager, () => sync, (nextSync) => { sync = nextSync; });
+        // Registered once (not inside onGameStart, which re-fires on reconnect): the
+        // handler ignores messages unless we are currently the host, so it also works
+        // correctly for a guest that is later promoted to host.
+        this.configureHostInputHandlers(gameEngine, manager, remotePositions);
 
         gameEngine.online.onPlayerDefeated = () => {
             manager.client.send({ type: 'player-died', playerId: manager.client.sessionToken });
@@ -319,6 +323,10 @@ export class OnlineModeApplication {
             gameEngine.renderer.entityRenderer.setLocalOnlinePlayer(localName, localIndex);
 
             const gs = gameEngine.gameState;
+            // game-start re-fires on reconnect/takeover. Stop the previous sender
+            // first, otherwise its interval keeps firing forever in parallel —
+            // duplicating player-position broadcasts and leaking a timer per reconnect.
+            positionSender?.stop();
             positionSender = new OnlinePositionSender(manager.client, gs);
             if (manager.isHost) {
                 positionSender.onRoomChanged = (roomIndex) => {
@@ -336,9 +344,11 @@ export class OnlineModeApplication {
 
             if (!manager.isHost) {
                 this.configureGuestInputRelay(gameEngine, manager, () => positionSender);
-            } else {
-                this.configureHostInputHandlers(gameEngine, manager, remotePositions);
             }
+            // Host-side player-input handling is registered ONCE in connectSession
+            // (see below), not here: game-start re-fires on reconnect/takeover, so
+            // registering it inside this callback would stack duplicate handlers and
+            // apply every relayed guest move/attack/interact multiple times.
 
             if (manager.isHost) {
                 if (!broadcaster) {
@@ -361,6 +371,12 @@ export class OnlineModeApplication {
                 if (!sync) {
                     sync = new OnlineStateSync(gs, () => gameEngine.renderer.draw());
                 }
+                // Re-arm snapshot gating on every (re)start. game-start re-fires on
+                // reconnect and a fresh full-state snapshot always follows it (the host
+                // broadcasts one at start and answers the server's snapshot-request on
+                // reconnect), so buffer diffs until it lands instead of applying them
+                // onto stale local state.
+                sync.reset();
                 // Guest: forward NPC reward signals to the host without applying locally.
                 // onNpcReward fires only from DialogManager.completeDialog (NPC quest rewards),
                 // NOT from switch/object interactions — avoiding the feedback loop that
@@ -419,6 +435,10 @@ export class OnlineModeApplication {
                 return game.online?.spawnPoints?.find((p) => p.role === role) ?? { roomIndex: 0, x: 1, y: 1 };
             };
 
+            // Clear any spectate loop already running (a second player-died before
+            // respawn would otherwise orphan the previous interval, leaving two loops
+            // fighting to reposition the camera).
+            spectateCleanup?.();
             positionSender?.stop();
             const spectateId = setInterval(() => {
                 const alive = [...remotePositions.values()].filter((rp) => rp.alive);
@@ -572,7 +592,9 @@ export class OnlineModeApplication {
         });
 
         manager.client.on('player-respawned', (msg) => {
-            const name = manager.players.find((p) => p.id === msg.playerId)?.name;
+            // msg.playerId is a sessionToken (PlayerInfo.id is the connection id, a
+            // different namespace) — match on sessionToken or the toast never shows.
+            const name = manager.players.find((p) => p.sessionToken === msg.playerId)?.name;
             if (name && msg.playerId !== manager.client.sessionToken) {
                 toast.show(`✨ ${name} voltou!`);
             }
@@ -708,6 +730,9 @@ export class OnlineModeApplication {
         remotePositions: Map<string, RemotePlayerState>,
     ): void {
         manager.client.on('player-input', (msg) => {
+            // Only the host simulates relayed guest input. (Registered once for the
+            // whole session, so this guard also covers a guest promoted to host.)
+            if (!manager.isHost) return;
             if (msg.playerId === manager.client.sessionToken) return;
             const guestPos = remotePositions.get(msg.playerId);
             if (msg.action === 'attack' && msg.enemyId) {

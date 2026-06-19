@@ -79,6 +79,15 @@ export class OnlineStateSync {
     reset(): void {
         this._snapshotApplied = false;
         this.pendingDiffs = [];
+        // Drop pending death-removal timers and the interpolation loop from the
+        // previous session — otherwise a stale timeout could splice an enemy that
+        // the incoming snapshot says is alive, making a live enemy vanish.
+        for (const timer of this.enemyRemovalTimers.values()) clearTimeout(timer);
+        this.enemyRemovalTimers.clear();
+        if (this.rafId !== null) {
+            cancelAnimationFrame(this.rafId);
+            this.rafId = null;
+        }
     }
 
     private applyDiffFields(diff: WorldStateDiff): void {

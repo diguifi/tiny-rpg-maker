@@ -202,6 +202,13 @@ class EnemyManager {
           this.windupTimersByEnemy.get(enemy.id)?.delete(timer);
           // Guard: don't attack if the enemy has died in the meantime
           if (EnemyDefinitions.isDying(enemy)) return;
+          // Re-check melee range against the remote player's CURRENT position so a
+          // guest can escape during the wind-up, exactly like the local player can
+          // (CombatManager.checkCombatRangeOrCancel). Skip if they moved away, left
+          // the room, or died while the wind-up animation played.
+          const rp = this.remotePlayers.find((p) => p.id === remoteId);
+          if (!rp || rp.alive === false || rp.roomIndex !== enemy.roomIndex) return;
+          if (Math.max(Math.abs(rp.x - enemy.x), Math.abs(rp.y - enemy.y)) > 1) return;
           this.onEnemyAttackedRemotePlayer?.(remoteId, 1);
         }, GameConfig.combat.lungeAnimationDuration);
         this.trackWindupTimer(enemy.id, timer);

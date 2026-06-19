@@ -5,7 +5,9 @@ function makeFakeEngine() {
     const gameState = { resetPushBoxesForRoom: vi.fn() };
     const interactionManager = { guestMode: false };
     const movementManager = { guestMode: false };
-    return { gameState, interactionManager, movementManager } as never;
+    // setMode re-evaluates the enemy loop (host/guest split); stub it out.
+    const startEnemyLoop = vi.fn();
+    return { gameState, interactionManager, movementManager, startEnemyLoop } as never;
 }
 
 describe('OnlineCoordinator — push-box host authority', () => {
@@ -13,12 +15,15 @@ describe('OnlineCoordinator — push-box host authority', () => {
         const engine = makeFakeEngine() as unknown as {
             interactionManager: { guestMode: boolean };
             movementManager: { guestMode: boolean };
+            startEnemyLoop: ReturnType<typeof vi.fn>;
         };
         const coord = new OnlineCoordinator(engine as never);
 
         coord.setMode('online-guest');
         expect(engine.interactionManager.guestMode).toBe(true);
         expect(engine.movementManager.guestMode).toBe(true);
+        // Must re-evaluate the enemy loop so a guest stops simulating enemies locally.
+        expect(engine.startEnemyLoop).toHaveBeenCalled();
 
         coord.setMode('online-host');
         expect(engine.interactionManager.guestMode).toBe(false);

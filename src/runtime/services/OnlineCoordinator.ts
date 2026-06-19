@@ -45,6 +45,11 @@ export class OnlineCoordinator {
     this.engine.interactionManager.guestMode = mode === 'online-guest';
     // Guest mode also makes push-boxes host-authoritative (no local move/reset).
     this.engine.movementManager.guestMode = mode === 'online-guest';
+    // The enemy loop is started at boot while still in 'solo' mode. Re-evaluate it
+    // now that the role is known: startEnemyLoop() stops the simulation for guests
+    // (they receive enemy state from the host) and runs it for host/solo. Without
+    // this, a guest keeps simulating enemies locally, fighting the host's diffs.
+    this.engine.startEnemyLoop();
   }
 
   isGuestMode(): boolean {

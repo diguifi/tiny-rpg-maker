@@ -186,6 +186,16 @@ export default class GameParty implements Party.Server {
         // Use sessionToken so clients can match against their remotePositions map
         this.party.broadcast(JSON.stringify({ type: 'player-leave', playerId: player.sessionToken }));
         this.broadcastPlayerList();
+
+        // Once the room is fully empty (no active players and nobody in the
+        // reconnection grace window), reset per-session state. PartyKit may keep the
+        // same instance warm, so without this a later pair joining the same room id
+        // would inherit gameStarted=true (new host never gets game-start, new guest
+        // waits forever for a snapshot) and the previous session's chat history.
+        if (this.players.size === 0 && this.disconnected.size === 0) {
+            this.gameStarted = false;
+            this.chatMessages = [];
+        }
     }
 
     // ── Private helpers ──────────────────────────────────────────────────────
@@ -210,6 +220,14 @@ export default class GameParty implements Party.Server {
         const prior = this.disconnected.get(sessionToken);
         if (prior) {
             this.disconnected.delete(sessionToken);
+            // A brand-new player may have taken the freed slot during the grace
+            // window. If the room is already full, restoring this player would push
+            // it to 3 and break the 2-player invariant — reject like any full room.
+            if (this.players.size >= MAX_ACTIVE_PLAYERS) {
+                sender.send(JSON.stringify({ type: 'server-full' }));
+                sender.close();
+                return;
+            }
             // Safety net: if someone else was promoted to host while this player
             // was disconnected, they must rejoin as guest to avoid two hosts.
             const hasActiveHost = [...this.players.values()].some((p) => p.role === 'host');
@@ -242,7 +260,12 @@ export default class GameParty implements Party.Server {
             sender.close();
             return;
         }
-        const role: OnlineRole = activeCount === 0 ? 'host' : 'guest';
+        // Assign host whenever the room currently has no active host. Covers the
+        // normal first join AND a room left hostless by an earlier reconnect/leave
+        // ordering (host promotion otherwise only happens on disconnect, so a join
+        // into a hostless room would stay a guest and freeze the session).
+        const hasActiveHost = [...this.players.values()].some((p) => p.role === 'host');
+        const role: OnlineRole = hasActiveHost ? 'guest' : 'host';
 
         const player: PlayerState = {
             id: sender.id,
