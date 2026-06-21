@@ -1,6 +1,7 @@
 
 import { EditorRendererBase } from './renderers/EditorRendererBase';
 import { EditorConstants } from './EditorConstants';
+import { track } from '../../analytics/track';
 import { ITEM_TYPES } from '../../runtime/domain/constants/itemTypes';
 import { ItemDefinitions } from '../../runtime/domain/definitions/ItemDefinitions';
 import { EditorModal } from './EditorModal';
@@ -38,6 +39,7 @@ class ObjectEditModal extends EditorRendererBase {
         const object = objects.find((o) => o.id === objectId);
         if (!object) return;
 
+        track('object_edit_opened', { type: object.type });
         this.currentObjectId = objectId;
 
         const definitions = EditorConstants.OBJECT_DEFINITIONS as ObjectDefinitionView[];

@@ -3,6 +3,7 @@ import { ShareDecoder } from '../../runtime/infra/share/ShareDecoder';
 import { GameEngine } from '../../runtime/services/GameEngine';
 import { getTinyRpgApi } from '../../runtime/infra/TinyRpgApi';
 import { TextResources } from '../../runtime/adapters/TextResources';
+import { track } from '../../analytics/track';
 
 const PREVIEW_CANVAS_WIDTH = 128;
 const GAMEPLAY_SIZE = 128;
@@ -158,6 +159,7 @@ class ExploreModal {
   open(): void {
     if (!this.modal) return;
     this.modal.hidden = false;
+    track('explore_opened');
     this.syncBackBanner();
     if (!this.loaded) void this.loadAll();
   }

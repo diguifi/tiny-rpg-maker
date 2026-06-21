@@ -13,6 +13,7 @@ import { soundEngine } from './runtime/services/SoundEngine';
 import { normalizeBackgroundMusicVolume } from './runtime/infra/share/BackgroundMusicVideoId';
 import { PerformanceProfiler, performanceProfiler } from './runtime/debug/PerformanceProfiler';
 import { loadAnalyticsWhenIdle } from './analytics/loadAnalytics';
+import { track } from './analytics/track';
 
 const getTextResource = (key: string, fallback = ''): string => {
   const value = TextResources.get(key, fallback) as string;
@@ -208,6 +209,7 @@ class TinyRPGApplication {
       if (isEditorMode) {
         ev.preventDefault();
         ev.stopImmediatePropagation();
+        track('new_game_clicked');
         const targetUrl = getBaseUrl();
         openNewGameTab(targetUrl);
         resetButton.blur();
@@ -460,6 +462,7 @@ class TinyRPGApplication {
       }
 
       applyLayoutMode(tabName);
+      track('tab_switch', { tab: tabName });
 
       if (tabName === 'game') {
         document.dispatchEvent(new CustomEvent('game-tab-activated', { detail: { initial: false } }));

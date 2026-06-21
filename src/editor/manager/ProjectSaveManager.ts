@@ -5,6 +5,7 @@
  * and localStorage persistence.
  */
 
+import { track } from '../../analytics/track';
 import type { SavedProject, ProjectHistory, ProjectSaveManagerOptions, SaveResult } from './ProjectSaveManager.types';
 
 /**
@@ -73,6 +74,7 @@ export class ProjectSaveManager {
     }
     try {
       this.inProgress = true;
+      track('project_saved');
       return this.addToHistory(shareUrl, projectTitle, undefined, false);
     } finally {
       this.inProgress = false;

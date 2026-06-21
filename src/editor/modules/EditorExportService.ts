@@ -3,6 +3,7 @@ import { ShareUtils } from '../../runtime/infra/share/ShareUtils';
 import { TextResources } from '../../runtime/adapters/TextResources';
 import { ShareConstants } from '../../runtime/infra/share/ShareConstants';
 import { FONT_CSS_SRC } from '../../config/FontConfig';
+import { track } from '../../analytics/track';
 
 type GameExportData = {
     title?: string;
@@ -135,6 +136,7 @@ class EditorExportService {
 
     async exportProjectAsHtml() {
         try {
+            track('export_html_started');
             const api = getTinyRpgApi();
             if (!api) {
                 alert('Unable to export: engine API is not available.');

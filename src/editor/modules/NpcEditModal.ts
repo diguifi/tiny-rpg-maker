@@ -1,6 +1,7 @@
 
 import { EditorRendererBase } from './renderers/EditorRendererBase';
 import { EditorModal } from './EditorModal';
+import { track } from '../../analytics/track';
 import type { EditorModalButton } from './EditorModal';
 import type { EditorRenderService } from './EditorRenderService';
 
@@ -39,6 +40,7 @@ class NpcEditModal extends EditorRendererBase {
         const npc = this.findNpc(npcId);
         if (!npc) return;
 
+        track('npc_edit_opened', { type: npc.type });
         this.currentNpcId = npcId;
         this.manager.state.selectedNpcId = npcId;
         this.manager.state.selectedNpcType = npc.type;

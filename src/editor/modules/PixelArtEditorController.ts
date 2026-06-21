@@ -1,5 +1,6 @@
 import type { CustomSpriteEntry, CustomSpriteVariant, CustomSpriteFrame } from '../../types/gameState';
 import { CustomSpriteLookup } from '../../runtime/domain/sprites/CustomSpriteLookup';
+import { track } from '../../analytics/track';
 import { RendererConstants } from '../../runtime/adapters/renderer/RendererConstants';
 import { TextResources } from '../../runtime/adapters/TextResources';
 import { TileDefinitions } from '../../runtime/domain/definitions/TileDefinitions';
@@ -97,6 +98,7 @@ export class PixelArtEditorController {
 
     save(): void {
         if (!this.manager || !this.group) return;
+        track('pixel_sprite_saved', { group: this.group });
         const game = this.manager.gameEngine.getGame() as { customSprites?: CustomSpriteEntry[] };
 
         const objectDef = this.group === 'object' ? this.findObjectDef(this.key) : undefined;

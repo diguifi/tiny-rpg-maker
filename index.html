@@ -185,7 +185,27 @@
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
 
-    gtag('config', 'G-D8S0K3NWFV');
+    // Stable client_id persisted in localStorage so analytics survives third-party
+    // cookie blocking when the game runs inside a cross-origin iframe (e.g. itch.io).
+    // localStorage is first-party to the iframe's own origin, so it is not blocked
+    // the way a cross-site GA cookie is. Falls back gracefully if storage throws.
+    // The key 'trpg_cid' must match CLIENT_ID_STORAGE_KEY in src/analytics/track.ts.
+    (function () {
+        var KEY = 'trpg_cid';
+        var cid = null;
+        try { cid = window.localStorage.getItem(KEY); } catch (e) { cid = null; }
+        if (!cid) {
+            try {
+                cid = (window.crypto && window.crypto.randomUUID)
+                    ? window.crypto.randomUUID()
+                    : (Date.now() + '.' + Math.floor(Math.random() * 1e9));
+            } catch (e) {
+                cid = Date.now() + '.' + Math.floor(Math.random() * 1e9);
+            }
+            try { window.localStorage.setItem(KEY, cid); } catch (e) { /* ignore */ }
+        }
+        gtag('config', 'G-D8S0K3NWFV', cid ? { client_id: cid } : {});
+    })();
     </script>
 </head>
 <body>

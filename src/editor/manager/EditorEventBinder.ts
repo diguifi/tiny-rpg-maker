@@ -1,6 +1,7 @@
 import type { EditorManager } from '../EditorManager';
 import { EditorManagerModule } from './EditorManagerModule';
 import { DebugFlags } from '../../runtime/debug/DebugFlags';
+import { track } from '../../analytics/track';
 import type { CustomSpriteEntry, CustomSpriteVariant } from '../../types/gameState';
 
 class EditorEventBinder extends EditorManagerModule {
@@ -190,6 +191,7 @@ class EditorEventBinder extends EditorManagerModule {
             manager.desselectAllAndRender();
 
             manager.selectedTileId = tileId;
+            track('tile_selected', { tile: tileId });
             this.renderService.updateSelectedTilePreview();
             this.renderService.renderTileList();
         });

@@ -1,5 +1,6 @@
 
 import { EnemyDefinitions } from '../runtime/domain/definitions/EnemyDefinitions';
+import { track } from '../analytics/track';
 import type { GameEngine } from '../runtime/services/GameEngine';
 import type { TileDefinition } from '../runtime/domain/definitions/tileTypes';
 import { EditorConstants } from './modules/EditorConstants';
@@ -482,10 +483,12 @@ class EditorManager {
     }
 
     undo() {
+        track('editor_undo');
         this.history.undo();
     }
 
     redo() {
+        track('editor_redo');
         this.history.redo();
     }
 

@@ -10,6 +10,7 @@
  * Editor tab is active, keeping the controls group cohesive.
  */
 import { DEVLOG_ENTRIES, LATEST_DEVLOG_ID, type DevlogEntry } from '../manager/devlogData';
+import { track } from '../../analytics/track';
 
 const SEEN_STORAGE_KEY = 'tiny-rpg-devlog-seen';
 const PAGE_SIZE = 5;
@@ -115,6 +116,7 @@ class DevlogModal {
     this.currentPage = 0;
     this.renderPage();
     this.modal.hidden = false;
+    track('devlog_opened');
     this.markAllSeen();
   }
 

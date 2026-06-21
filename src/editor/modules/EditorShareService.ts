@@ -3,6 +3,7 @@ import { FirebaseShareTracker } from '../../runtime/infra/share/FirebaseShareTra
 import { ensureFirebase } from '../../runtime/infra/share/FirebaseLoader';
 import { ShareUtils } from '../../runtime/infra/share/ShareUtils';
 import { TextResources } from '../../runtime/adapters/TextResources';
+import { track } from '../../analytics/track';
 import type { EditorManager } from '../EditorManager';
 
 class EditorShareService {
@@ -48,6 +49,7 @@ class EditorShareService {
             const url = await this.buildShareUrl();
             if (!url) return;
             this.updateShareUrlField(url);
+            track('share_url_generated');
 
             type NavigatorWithOptionalClipboard = Navigator & Partial<{ clipboard: Clipboard }>;
             const navigatorApi =
@@ -85,6 +87,7 @@ class EditorShareService {
     }
 
     saveGame() {
+        track('game_saved_json');
         const blob = new Blob(
             [JSON.stringify(this.manager.gameEngine.exportGameData(), null, 2)],
             { type: 'application/json' }
@@ -109,6 +112,7 @@ class EditorShareService {
                 const data: Record<string, unknown> = JSON.parse(reader.result as string) as Record<string, unknown>;
                 this.manager.restore(data, { skipHistory: true });
                 this.manager.history.pushCurrentState();
+                track('game_loaded_json');
             } catch {
                 alert(this.t('alerts.share.loadError'));
             }

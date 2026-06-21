@@ -1,6 +1,7 @@
 
 import { itemCatalog } from '../../runtime/domain/services/ItemCatalog';
 import { EditorConstants } from './EditorConstants';
+import { track } from '../../analytics/track';
 import type { EditorManager } from '../EditorManager';
 
 const ONLINE_PLAYER_START_2_TYPE = 'player-start-2';
@@ -85,6 +86,8 @@ class EditorObjectService {
         if (type === ONLINE_PLAYER_START_2_TYPE) {
             const game = this.gameEngine.getGame() as { online?: { enabled?: boolean; spawnPoints?: Array<{ role: string; roomIndex: number; x: number; y: number }> } };
             if (!game.online?.enabled) return;
+            // Track which object type is placed so the most-used object is rankable in GA.
+            track('object_placed', { type });
             game.online.spawnPoints = [{ role: 'p2', roomIndex, x: coord.x, y: coord.y }];
             this.togglePlacement(type, true);
             this.manager.uiController.syncUI();
@@ -99,6 +102,8 @@ class EditorObjectService {
         }
         const object = this.gameEngine.setObjectPosition(type, roomIndex, coord.x, coord.y);
         if (!object) return;
+        // Track which object type is placed so the most-used object is rankable in GA.
+        track('object_placed', { type });
         this.togglePlacement(type, true);
         this.manager.renderService.renderObjects();
         this.manager.renderObjectCatalog();
@@ -114,6 +119,7 @@ class EditorObjectService {
             this.togglePlacement(type, true);
         }
         this.gameEngine.removeObject(type, roomIndex);
+        track('object_removed', { type });
         this.manager.renderService.renderObjects();
         this.manager.renderObjectCatalog();
         this.manager.renderService.renderWorldGrid();

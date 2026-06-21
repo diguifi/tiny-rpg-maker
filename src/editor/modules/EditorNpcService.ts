@@ -1,5 +1,6 @@
 
 import { TextResources } from '../../runtime/adapters/TextResources';
+import { track } from '../../analytics/track';
 import type { EditorManager } from '../EditorManager';
 import type { NpcDefinitionData } from '../../runtime/domain/entities/Npc';
 import type { VariableDefinition } from '../../types/gameState';
@@ -76,6 +77,7 @@ class EditorNpcService {
         }
         this.state.selectedNpcId = created.id;
         this.state.selectedNpcType = created.type;
+        track('npc_created', { type: created.type });
 
         this.activatePlacement();
         this.manager.renderService.renderNpcs();
@@ -137,6 +139,7 @@ class EditorNpcService {
         const removed = this.gameEngine.npcManager.removeNPC(this.state.selectedNpcId);
         if (!removed) return;
 
+        track('npc_removed', { type: this.state.selectedNpcType ?? '' });
         this.clearSelection({ render: false });
         this.manager.renderService.renderNpcs();
         this.manager.renderService.renderWorldGrid();

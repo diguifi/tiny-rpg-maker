@@ -1,3 +1,4 @@
+import { track } from '../../analytics/track';
 import type { ProjectSaveManager } from './ProjectSaveManager';
 
 type ShareGetter = () => string | null;
@@ -122,6 +123,7 @@ export class ProjectSaveUI {
         this.closeHistoryMenu();
         if (this.onLoadProject) {
           this.onLoadProject(project.shareUrl);
+          track('project_restored');
           this.showNotification('Game reloaded from save', 'success');
         }
       } else {

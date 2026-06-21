@@ -1,6 +1,7 @@
 
 import { EditorRendererBase } from './renderers/EditorRendererBase';
 import { EditorModal } from './EditorModal';
+import { track } from '../../analytics/track';
 import type { EditorModalButton } from './EditorModal';
 import type { EditorRenderService } from './EditorRenderService';
 import type { EnemyDefinitionData } from '../../runtime/domain/entities/Enemy';
@@ -19,6 +20,7 @@ class EnemyEditModal extends EditorRendererBase {
         const enemy = this.findEnemy(enemyId);
         if (!enemy) return;
 
+        track('enemy_edit_opened', { type: enemy.type });
         this.currentEnemyId = enemyId;
 
         const definition = this.getDefinition(enemy.type);

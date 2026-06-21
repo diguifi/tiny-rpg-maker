@@ -2,6 +2,7 @@
 import { EnemyDefinitions } from '../../runtime/domain/definitions/EnemyDefinitions';
 import { TextResources } from '../../runtime/adapters/TextResources';
 import { EditorConstants } from './EditorConstants';
+import { track } from '../../analytics/track';
 import type { EditorManager } from '../EditorManager';
 import type { EnemyDefinition } from '../../types/gameState';
 import type { EnemyDefinitionData } from '../../runtime/domain/entities/Enemy';
@@ -85,6 +86,7 @@ class EditorEnemyService {
         if (!id) {
             return;
         }
+        track('enemy_placed', { type });
         this.deactivatePlacement();
         this.manager.renderService.renderEnemyCatalog();
         this.manager.renderService.renderWorldGrid();
@@ -96,6 +98,7 @@ class EditorEnemyService {
 
     removeEnemy(enemyId: string) {
         this.gameEngine.removeEnemy(enemyId);
+        track('enemy_removed');
         this.manager.renderService.renderEnemyCatalog();
         this.manager.renderService.renderWorldGrid();
         this.manager.renderService.renderEditor();
